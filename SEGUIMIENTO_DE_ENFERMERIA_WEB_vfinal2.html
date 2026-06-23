@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguimiento de Enfermería · CRED</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:#1e293b;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+.topbar{background:linear-gradient(90deg,#0d4f5c,#0e6b7a);color:#fff;padding:0 20px;height:52px;display:flex;align-items:center;gap:14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.topbar-logo{width:30px;height:30px;background:#17a2b8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.topbar-title h1{font-size:1.05rem;font-weight:700;letter-spacing:-.2px}
+.topbar-title p{font-size:.78rem;color:#a8d8e0;margin-top:1px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.topbar-time{font-size:.78rem;color:#a8d8e0}
+.topbar-total{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:5px 14px;font-size:.82rem;font-weight:700;color:#fff}
+.btn-sync{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:7px 14px;font-size:.8rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .2s}
+.btn-sync:hover{background:rgba(255,255,255,.22)}
+.btn-nuevo{background:#e67e22;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s}
+.btn-nuevo:hover{background:#d35400}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 52px)}
+
+/* ── SIDEBAR ── */
+.sidebar{width:240px;background:#0f3d47;color:#fff;flex-shrink:0;overflow-y:auto;padding:0 0 20px}
+.sidebar-header{background:#0a2e37;padding:8px 12px;font-size:.65rem;font-weight:800;letter-spacing:1.2px;color:#7ecfdb;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.filter-section{padding:8px 12px 5px}
+.filter-label{font-size:.67rem;font-weight:700;letter-spacing:1px;color:#7ecfdb;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.filter-section input,.filter-section select{width:100%;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.07);color:#fff;font-size:.75rem;outline:none;transition:border .2s}
+.filter-section input::placeholder{color:rgba(255,255,255,.35)}
+.filter-section input:focus,.filter-section select:focus{border-color:#17a2b8;background:rgba(255,255,255,.12)}
+.filter-section select option{background:#0f3d47;color:#fff}
+.filter-divider{height:1px;background:rgba(255,255,255,.08);margin:4px 16px}
+.year-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:4px}
+.y-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);border-radius:6px;padding:6px 4px;font-size:.75rem;font-weight:700;cursor:pointer;text-align:center;transition:all .2s}
+.y-btn:hover,.y-btn.active{background:#17a2b8;color:#fff;border-color:#17a2b8}
+.btn-reset{width:calc(100% - 24px);margin:8px 12px 0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.75);border-radius:6px;padding:5px;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-reset:hover{background:rgba(255,255,255,.15)}
+
+/* ── MAIN ── */
+.main{flex:1;overflow:hidden;padding:5px 8px;display:flex;flex-direction:column;gap:5px}
+
+/* ── STATS ── */
+.stats-row{display:flex;gap:6px;flex-wrap:nowrap;flex-shrink:0}
+.stat-card{background:#fff;border-radius:8px;padding:10px 18px;flex:1;min-width:60px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-top:4px solid #ccc;flex-shrink:0}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card .num{font-size:2.8rem;font-weight:800;line-height:1;letter-spacing:-1px}
+.stat-card .lbl{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#64748b;margin-top:4px}
+.stat-card.s1{border-top-color:#0e6b7a}.stat-card.s1 .num{color:#0e6b7a}
+.stat-card.s2{border-top-color:#16a34a}.stat-card.s2 .num{color:#16a34a}
+.stat-card.s3{border-top-color:#2563eb}.stat-card.s3 .num{color:#2563eb}
+.stat-card.s4{border-top-color:#dc2626}.stat-card.s4 .num{color:#dc2626}
+.stat-card.s5{border-top-color:#f59e0b}.stat-card.s5 .num{color:#f59e0b}
+.stat-card.s6{border-top-color:#7c3aed}.stat-card.s6 .num{color:#7c3aed}
+
+/* ── SEARCH BAR ── */
+.search-bar{background:#fff;border-radius:8px;padding:6px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);flex-shrink:0}
+.search-bar input{flex:1;border:none;outline:none;font-size:.88rem;color:#1e293b;background:transparent}
+.search-bar input::placeholder{color:#94a3b8}
+.search-icon{color:#17a2b8;font-size:1.05rem}
+.results-count{font-size:.8rem;color:#64748b;font-weight:600;white-space:nowrap}
+
+/* ── TABLE ── */
+.table-wrap{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden;flex:1;min-width:0;display:flex;flex-direction:column}
+.table-scroll{overflow-y:auto;flex:1}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead{background:#0f3d47;position:sticky;top:0;z-index:2}
+thead th{padding:5px 4px;text-align:center;font-size:.6rem;font-weight:700;color:#7ecfdb;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s;cursor:default}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f0fdfe}
+tbody tr.vencida{background:#fff5f5}
+tbody tr.vencida:hover{background:#fde8e8}
+tbody tr.proxima{background:#fffdf0}
+tbody tr.proxima:hover{background:#fef9d6}
+tbody td{padding:3px 4px;font-size:.68rem;color:#334155;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.td-name{font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.78rem;letter-spacing:-.2px;text-align:left}
+.td-dni{font-family:monospace;font-size:.75rem;color:#475569}
+.badge-dir{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.d-TRAPOSA{background:#dcfce7;color:#166534}
+.d-MAYASCON{background:#dbeafe;color:#1e40af}
+.d-DESAGUADERO{background:#f3e8ff;color:#6b21a8}
+.badge-cita{display:inline-block;padding:3px 9px;border-radius:6px;font-size:.72rem;font-weight:700;white-space:nowrap}
+.c-vencida{background:#fee2e2;color:#b91c1c}
+.c-hoy{background:#dcfce7;color:#166534}
+.c-proxima{background:#fef9c3;color:#854d0e}
+.c-futura{background:#e0f2fe;color:#0369a1}
+.c-sin{background:#f1f5f9;color:#64748b}
+.td-seg{font-size:.75rem;font-weight:700}
+.seg-neg{color:#dc2626}.seg-pos{color:#16a34a}.seg-zero{color:#0369a1}
+.badge-seg{display:inline-flex;align-items:center;justify-content:center;padding:2px 6px;border-radius:8px;white-space:nowrap;min-width:60px}
+.seg-SIS{background:#eff6ff;border:1px solid #bfdbfe}
+.seg-ESSALUD{background:#f0fdf4;border:1px solid #bbf7d0}
+.seg-PRIVADO{background:#f8fafc;border:1px solid #e2e8f0}
+.seg-NINGUNO{background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;font-size:.7rem}
+.obs-td{max-width:140px;font-size:.72rem;color:#64748b;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:3px 8px;border-top:1px solid #f1f5f9;background:#fafafa;flex-shrink:0}
+.page-info{font-size:.78rem;color:#64748b}
+.page-btns{display:flex;gap:4px;align-items:center}
+.pg-btn{width:22px;height:22px;border:1px solid #e2e8f0;background:#fff;border-radius:4px;cursor:pointer;font-size:.65rem;font-weight:600;color:#475569;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.pg-btn:hover:not(:disabled){background:#e0f7fa;border-color:#17a2b8;color:#0e6b7a}
+.pg-btn.active{background:#0e6b7a;color:#fff;border-color:#0e6b7a}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed}
+.pg-btn.pg-prev,.pg-btn.pg-next{width:auto;padding:0 7px;font-size:.65rem}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,30,40,.6);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:540px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:su .28s ease}
+@keyframes su{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.modal-head{background:linear-gradient(90deg,#0d4f5c,#0e6b7a);padding:16px 22px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:10px}
+.modal-head h3{color:#fff;font-size:1rem;font-weight:700;flex:1}
+.modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:rgba(255,255,255,.28)}
+.modal-body{padding:22px 24px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.full{grid-column:1/-1}
+.fg label{font-size:.72rem;font-weight:700;color:#0e6b7a;text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg select,.fg textarea{padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.84rem;outline:none;color:#1e293b;transition:border .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#17a2b8}
+.fg textarea{resize:vertical;min-height:65px}
+.modal-foot{padding:0 24px 22px;display:flex;gap:10px;justify-content:flex-end}
+.btn-cancel{background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 20px;font-size:.84rem;font-weight:600;cursor:pointer}
+.btn-save{background:#0e6b7a;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:.84rem;font-weight:700;cursor:pointer}
+.btn-save:hover{background:#0d4f5c}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:#0e6b7a;color:#fff;padding:11px 18px;border-radius:10px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.2);display:none;align-items:center;gap:8px;z-index:300}
+.toast.show{display:flex}
+
+  #modalOverlay input[type="text"],
+  #modalOverlay input[type="number"],
+  #modalOverlay textarea {
+    text-transform: uppercase;
+  }
+
+/* ── CRED PROTOCOL PANEL ── */
+.cred-panel{background:#fff;border:1.5px solid #e0f2fe;border-radius:12px;overflow:hidden;margin-bottom:14px}
+.cred-panel-head{background:linear-gradient(90deg,#0d4f5c,#0e6b7a);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:8px}
+.cred-panel-head span{font-size:.78rem;font-weight:700;letter-spacing:.3px}
+.cred-table{width:100%;border-collapse:collapse;font-size:.78rem;table-layout:fixed;min-width:480px}
+.cred-table th{background:#0f3d47;color:#7ecfdb;padding:8px 6px;text-align:center;font-size:.67rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
+.cred-table th:nth-child(1){width:18%}
+.cred-table th:nth-child(2){width:32%}
+.cred-table th:nth-child(3){width:14%}
+.cred-table th:nth-child(4){width:12%}
+.cred-table th:nth-child(5){width:24%}
+.cred-table td{padding:8px 6px;text-align:center;border-bottom:1px solid #f0f9ff;color:#334155;vertical-align:middle;white-space:normal}
+.cred-table tr:last-child td{border-bottom:none}
+.cred-table tr.cred-current{background:#e0f7fa}
+.cred-table tr.cred-current td{font-weight:700;color:#0e6b7a}
+.cred-tag{display:inline-block;padding:3px 9px;border-radius:12px;font-size:.7rem;font-weight:700;margin:2px 3px;white-space:nowrap}
+.cred-tag.ctrl{background:#dbeafe;color:#1e40af}
+.cred-tag.vac{background:#dcfce7;color:#166534}
+.cred-tag.tam{background:#fef3c7;color:#92400e}
+.cred-tag.none{background:#f1f5f9;color:#94a3b8}
+.cred-badge-etapa{display:inline-block;background:#0e6b7a;color:#fff;border-radius:20px;padding:2px 10px;font-size:.7rem;font-weight:700}
+.cred-date-input{border:1.5px solid #e2e8f0;border-radius:6px;padding:3px 4px;font-size:.7rem;color:#0f172a;background:#f8fafc;outline:none;width:100%;max-width:120px;transition:border .2s}
+.cred-date-input:focus{border-color:#17a2b8;background:#fff}
+.cred-date-input.filled{border-color:#16a34a;background:#f0fdf4;color:#166534;font-weight:700}
+.cred-save-btn{background:#0e6b7a;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .2s}
+.cred-save-btn:hover{background:#0d4f5c}
+
+/* ── LOGIN SCREEN ── */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0a2e37 0%,#0e6b7a 60%,#17a2b8 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:#fff;border-radius:20px;padding:40px 36px 32px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center}
+.login-logo{width:64px;height:64px;background:linear-gradient(135deg,#0d4f5c,#17a2b8);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 16px}
+.login-box h2{font-size:1.1rem;font-weight:800;color:#0f172a;margin-bottom:4px}
+.login-box p{font-size:.75rem;color:#64748b;margin-bottom:24px;line-height:1.4}
+.login-field{margin-bottom:14px;text-align:left}
+.login-field label{font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
+.login-field input{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;color:#0f172a;outline:none;transition:border .2s}
+.login-field input:focus{border-color:#17a2b8}
+.login-btn{width:100%;padding:12px;background:linear-gradient(90deg,#0d4f5c,#0e6b7a);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.login-btn:hover{opacity:.9}
+.login-error{background:#fee2e2;color:#dc2626;border-radius:8px;padding:8px 12px;font-size:.78rem;font-weight:600;margin-top:10px;display:none}
+.login-footer{margin-top:20px;font-size:.68rem;color:#94a3b8}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🏥</div>
+    <h2>Seguimiento de Enfermería</h2>
+    <p>Puesto de Salud La Traposa<br>Lic. Enf. Tania Ruiz Céspedes</p>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="loginUser" placeholder="Ingrese su usuario" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Ingresar →</button>
+    <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+    <div class="login-footer">Sistema de uso exclusivo del personal autorizado</div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-logo">🏥</div>
+  <div class="topbar-title">
+    <h1>Seguimiento de Enfermería — Global Data</h1>
+    <p>Puesto de Salud La Traposa &nbsp;·&nbsp; Lic. Enf. Tania Ruiz Céspedes</p>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-time" id="clock">⏱ --:-- a.m.</span>
+    <span class="topbar-total" id="top-total">Total: 179</span>
+    <button class="btn-sync" onclick="syncFromSheets()" title="Sincronizar con Google Sheets">🔄 Sincronizar</button>
+    <button class="btn-nuevo" onclick="openModal()">➕ Nuevo Paciente</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">⚙ Filtros de Búsqueda</div>
+
+    <div class="filter-section">
+      <div class="filter-label">🗓 Año de Nacimiento</div>
+      <div class="year-grid" id="yearGrid"></div>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-section">
+      <div class="filter-label">📍 Dirección</div>
+      <select id="fDir" onchange="applyFilters()">
+        <option value="">— Todas —</option>
+        <option value="TRAPOSA">TRAPOSA</option>
+        <option value="MAYASCON">MAYASCON</option>
+        <option value="DESAGUADERO">DESAGUADERO</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-section">
+      <div class="filter-label">📋 Estado de Cita</div>
+      <select id="fEstado" onchange="applyFilters()">
+        <option value="">— Todos —</option>
+        <option value="vencida">Vencidas</option>
+        <option value="proxima">Próximas (30d)</option>
+        <option value="futura">Futuras</option>
+        <option value="sin">Sin cita</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-section">
+      <div class="filter-label">📝 Observaciones</div>
+      <select id="fObs" onchange="applyFilters()">
+        <option value="">— Todas —</option>
+        <option value="si">Con observaciones</option>
+        <option value="no">Sin observaciones</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-section">
+      <div class="filter-label">🏥 Tipo de Seguro</div>
+      <select id="fSeg" onchange="applyFilters()">
+        <option value="">— Todos —</option>
+        <option value="SIS">SIS - Seguro Integral</option>
+        <option value="ESSALUD">EsSalud</option>
+        <option value="PRIVADO">Seguro Privado</option>
+        <option value="__NONE__">Sin seguro</option>
+      </select>
+    </div>
+
+    <div style="margin:10px 16px 0;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:8px;border:1px solid rgba(255,255,255,.1)">
+      <div style="font-size:.62rem;font-weight:700;color:#7ecfdb;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Leyenda Seguros</div>
+      <div id="seg-legend" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+    <button class="btn-reset" onclick="resetFilters()">🔄 Limpiar filtros</button>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card s1"><div class="num" id="s-total">179</div><div class="lbl">Total Pacientes</div></div>
+      <div class="stat-card s2"><div class="num" id="s-traposa">79</div><div class="lbl">Traposa</div></div>
+      <div class="stat-card s3"><div class="num" id="s-mayascon">41</div><div class="lbl">Mayascon</div></div>
+      <div class="stat-card s6"><div class="num" id="s-desaguadero">59</div><div class="lbl">Desaguadero</div></div>
+      <div class="stat-card s4"><div class="num" id="s-vencidas">67</div><div class="lbl">Citas Vencidas</div></div>
+      <div class="stat-card s5"><div class="num" id="s-proximas">15</div><div class="lbl">Próximas 30d</div></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar por DNI o Nombre..." oninput="applyFilters()">
+      <span class="results-count" id="resCount">179 resultados</span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:19%">Nombre y Apellido</th>
+            <th style="width:8%">DNI</th>
+            <th style="width:13%">Edad</th>
+            <th style="width:9%">Dir.</th>
+            <th style="width:8%">Teléfono</th>
+            <th style="width:9%">Próx. Cita</th>
+            <th style="width:7%;cursor:pointer" title="Ordenado: más vencidas primero">Seguim.↑</th>
+            <th style="width:5%">Seguro</th>
+            <th style="width:3%">PJ</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      </div>
+      <div id="noRes" style="display:none;text-align:center;padding:48px;color:#94a3b8">
+        <div style="font-size:2.5rem;margin-bottom:10px">🔍</div>
+        <div style="font-weight:600">No se encontraron pacientes</div>
+      </div>
+      <div class="pagination">
+        <span class="page-info" id="pageInfo">Página 1 de 1 · 1–20 de 179</span>
+        <div class="page-btns" id="pageBtns"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <span style="font-size:1.2rem">👶</span>
+      <h3>Registrar Nuevo Paciente</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="fg"><label>DNI *</label><input id="f-dni" style="text-transform:uppercase" placeholder="Ej: 94000000" maxlength="12"></div>
+        <div class="fg"><label>Tipo de Seguro</label><select id="f-seg"><option value="">Sin seguro</option><option>SIS</option><option>ESSALUD</option><option>PRIVADO</option></select></div>
+        <div class="fg full"><label>Nombre y Apellido *</label><input id="f-nom" style="text-transform:uppercase" placeholder="APELLIDOS NOMBRES"></div>
+        <div class="fg"><label>Fecha Nacimiento *</label><input type="date" id="f-nac"></div>
+        <div class="fg"><label>Teléfono</label><input id="f-tel" placeholder="9XXXXXXXX"></div>
+        <div class="fg"><label>Dirección *</label><select id="f-dir"><option value="">Seleccionar...</option><option>TRAPOSA</option><option>MAYASCON</option><option>DESAGUADERO</option></select></div>
+        <div class="fg"><label>Próxima Cita</label><input type="date" id="f-cita"></div>
+        <div class="fg"><label>Programa Juntos</label><select id="f-pjuntos" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.88rem;background:#fff"><option value="">-- Seleccionar --</option><option value="SI">SI</option><option value="NO">NO</option></select></div>
+        <div class="fg full"><label>Observaciones</label><textarea id="f-obs" placeholder="NOTAS, VACUNAS PENDIENTES..." style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="savePatient()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script>
+
+// ── LOGIN ──────────────────────────────────────────────────
+const USERS = {
+  'TANIARC': 'Traposa2026'
+};
+
+function doLogin(){
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+  const p = document.getElementById('loginPass').value.trim().toLowerCase();
+  const err = document.getElementById('loginError');
+  const usersLower = {};
+  Object.keys(USERS).forEach(k => usersLower[k.toLowerCase()] = USERS[k].toLowerCase());
+  if(usersLower[u] && usersLower[u] === p){
+    document.getElementById('loginScreen').style.display='none';
+    sessionStorage.setItem('cred_auth','1');
+  } else {
+    err.style.display='block';
+    document.getElementById('loginPass').value='';
+    document.getElementById('loginPass').focus();
+    setTimeout(()=>err.style.display='none', 3000);
+  }
+}
+
+// Si ya estaba autenticado en esta sesión, ocultar login directo
+if(sessionStorage.getItem('cred_auth')==='1'){
+  document.getElementById('loginScreen').style.display='none';
+} else {
+  // Enfocar el campo usuario al cargar
+  setTimeout(()=>{ const u=document.getElementById('loginUser'); if(u) u.focus(); }, 100);
+}
+
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+const PER_PAGE = 16;
+let page = 1;
+let filtered = [];
+
+// ── DATA: cargada inmediatamente desde el archivo ──
+const DATA_LOCAL = [{"N°":1,"DNI":91177325,"NOMBRE Y APELLIDO":"LARA CARRILLO LIAM ABDIEL","FECHA DE NACIMIENTO":"2019-01-16","EDAD (MES)":"7 Años 4 Meses 7 Dias","DIRECCION":"TRAPOSA","TELEFONO":"935182899","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":2,"DNI":91201837,"NOMBRE Y APELLIDO":"VALDERA CARRANZA JHOISER","FECHA DE NACIMIENTO":"2019-02-10","EDAD (MES)":"7 Años 3 Meses 13 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":3,"DNI":91203893,"NOMBRE Y APELLIDO":"RODRIGUEZ PEREZ MELODY","FECHA DE NACIMIENTO":"2019-02-14","EDAD (MES)":"7 Años 3 Meses 9 Dias","DIRECCION":"MAYASCON","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":4,"DNI":91204623,"NOMBRE Y APELLIDO":"TAPIA LLAGUENTO ANGHELY","FECHA DE NACIMIENTO":"2019-02-19","EDAD (MES)":"7 Años 3 Meses 4 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":5,"DNI":91249031,"NOMBRE Y APELLIDO":"MANAYAY MENDOZA NATALY","FECHA DE NACIMIENTO":"2019-03-02","EDAD (MES)":"7 Años 2 Meses 21 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":6,"DNI":91239849,"NOMBRE Y APELLIDO":"SANTA CRUZ HEREDIA YULER","FECHA DE NACIMIENTO":"2019-03-20","EDAD (MES)":"7 Años 2 Meses 3 Dias","DIRECCION":"MAYASCON","TELEFONO":"976991236","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":7,"DNI":91274040,"NOMBRE Y APELLIDO":"LLAGUENTO TORRES ADRIANA","FECHA DE NACIMIENTO":"2019-03-27","EDAD (MES)":"7 Años 1 Meses 26 Dias","DIRECCION":"MAYASCON","TELEFONO":"988786732","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":8,"DNI":91294505,"NOMBRE Y APELLIDO":"PAZOS MANAYAY ISRAEL","FECHA DE NACIMIENTO":"2019-04-03","EDAD (MES)":"7 Años 1 Meses 20 Dias","DIRECCION":"TRAPOSA","TELEFONO":"927069591","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":9,"DNI":91327893,"NOMBRE Y APELLIDO":"RIMARACHIN VASQUEZ YOSTIN","FECHA DE NACIMIENTO":"2019-04-26","EDAD (MES)":"7 Años 0 Meses 27 Dias","DIRECCION":"MAYASCON","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":10,"DNI":91370478,"NOMBRE Y APELLIDO":"TANTARICO HUAMAN JAIME","FECHA DE NACIMIENTO":"2019-06-02","EDAD (MES)":"6 Años 11 Meses 21 Dias","DIRECCION":"TRAPOSA","TELEFONO":"929307133","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":11,"DNI":91417008,"NOMBRE Y APELLIDO":"CIENFUEGOS GUEVARA ESTRELLITA","FECHA DE NACIMIENTO":"2019-06-23","EDAD (MES)":"6 Años 11 Meses 0 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":12,"DNI":91469974,"NOMBRE Y APELLIDO":"CESPEDES DELGADO LUCAS","FECHA DE NACIMIENTO":"2019-08-20","EDAD (MES)":"6 Años 9 Meses 3 Dias","DIRECCION":"TRAPOSA","TELEFONO":"925323887","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":13,"DNI":78352787,"NOMBRE Y APELLIDO":"GONZALES REYES THIAGO","FECHA DE NACIMIENTO":"2019-10-06","EDAD (MES)":"6 Años 7 Meses 17 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":14,"DNI":91561458,"NOMBRE Y APELLIDO":"DIAZ TOCTO BRAYAN","FECHA DE NACIMIENTO":"2019-10-27","EDAD (MES)":"6 Años 6 Meses 26 Dias","DIRECCION":"MAYASCON","TELEFONO":"958620270","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":15,"DNI":91575033,"NOMBRE Y APELLIDO":"RIMARACHIN SANCHEZ GENESIS","FECHA DE NACIMIENTO":"2019-10-25","EDAD (MES)":"6 Años 6 Meses 28 Dias","DIRECCION":"MAYASCON","TELEFONO":"917141976","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":16,"DNI":91559691,"NOMBRE Y APELLIDO":"CARRILLO DIAZ DAVID","FECHA DE NACIMIENTO":"2019-10-26","EDAD (MES)":"6 Años 6 Meses 27 Dias","DIRECCION":"MAYASCON","TELEFONO":"968575947","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":17,"DNI":91671259,"NOMBRE Y APELLIDO":"CARRANZA RODRIGO VICTOR","FECHA DE NACIMIENTO":"2019-11-30","EDAD (MES)":"6 Años 5 Meses 23 Dias","DIRECCION":"TRAPOSA","TELEFONO":"925589252","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":18,"DNI":91612568,"NOMBRE Y APELLIDO":"DIAZ CARRANZA ABIGAIL","FECHA DE NACIMIENTO":"2019-11-28","EDAD (MES)":"6 Años 5 Meses 25 Dias","DIRECCION":"TRAPOSA","TELEFONO":"9900538965","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":19,"DNI":82083432,"NOMBRE Y APELLIDO":"CALDERON CARLOS NATALIE","FECHA DE NACIMIENTO":"2019-04-28","EDAD (MES)":"7 Años 0 Meses 25 Dias","DIRECCION":"TRAPOSA","TELEFONO":"931025915","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":20,"DNI":91576418,"NOMBRE Y APELLIDO":"CARRILLO DE LA CRUZ AIXA","FECHA DE NACIMIENTO":"2019-11-04","EDAD (MES)":"6 Años 6 Meses 19 Dias","DIRECCION":"TRAPOSA","TELEFONO":"916046297","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":21,"DNI":91374946,"NOMBRE Y APELLIDO":"MENDOZA MEJIA JOSÉ","FECHA DE NACIMIENTO":"2019-06-04","EDAD (MES)":"6 Años 11 Meses 19 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":22,"DNI":91228271,"NOMBRE Y APELLIDO":"VASQUEZ LLAGUENTO RONALD","FECHA DE NACIMIENTO":"2019-02-16","EDAD (MES)":"7 Años 3 Meses 7 Dias","DIRECCION":"MAYASCON","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":23,"DNI":91671129,"NOMBRE Y APELLIDO":"OBLITAS ROJAS SAMANTA","FECHA DE NACIMIENTO":"2020-01-07","EDAD (MES)":"6 Años 4 Meses 16 Dias","DIRECCION":"TRAPOSA","TELEFONO":"931442643","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":24,"DNI":91668987,"NOMBRE Y APELLIDO":"VILCABANA SANCHEZ AARON","FECHA DE NACIMIENTO":"2020-01-06","EDAD (MES)":"6 Años 4 Meses 17 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":25,"DNI":91711029,"NOMBRE Y APELLIDO":"CARRILLO SANCHEZ IAN","FECHA DE NACIMIENTO":"2020-01-15","EDAD (MES)":"6 Años 4 Meses 8 Dias","DIRECCION":"TRAPOSA","TELEFONO":"979854456","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":26,"DNI":91701890,"NOMBRE Y APELLIDO":"BECERRA CESPEDES JESUS","FECHA DE NACIMIENTO":"2020-01-27","EDAD (MES)":"6 Años 3 Meses 26 Dias","DIRECCION":"TRAPOSA","TELEFONO":"9018225567","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":27,"DNI":91740761,"NOMBRE Y APELLIDO":"TOCTO ACUÑA KARLA","FECHA DE NACIMIENTO":"2020-02-21","EDAD (MES)":"6 Años 3 Meses 2 Dias","DIRECCION":"MAYASCON","TELEFONO":"918614169","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":28,"DNI":91737193,"NOMBRE Y APELLIDO":"ZURITA SANTOS LIAM","FECHA DE NACIMIENTO":"2020-02-20","EDAD (MES)":"6 Años 3 Meses 3 Dias","DIRECCION":"TRAPOSA","TELEFONO":"917522206","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":29,"DNI":91760947,"NOMBRE Y APELLIDO":"CAJUSOL MANAYAY JOSÉ","FECHA DE NACIMIENTO":"2020-03-06","EDAD (MES)":"6 Años 2 Meses 17 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"975906925","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":30,"DNI":91751968,"NOMBRE Y APELLIDO":"LLANOS MEJIA MAGALY","FECHA DE NACIMIENTO":"2020-02-29","EDAD (MES)":"6 Años 2 Meses 24 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"962873834","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":31,"DNI":91840200,"NOMBRE Y APELLIDO":"ZAMORA PEREZ IVANA","FECHA DE NACIMIENTO":"2020-05-02","EDAD (MES)":"6 Años 0 Meses 21 Dias","DIRECCION":"TRAPOSA","TELEFONO":"927800468","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":32,"DNI":91816722,"NOMBRE Y APELLIDO":"ZAMORA ROJAS LUZ ESMERALDA","FECHA DE NACIMIENTO":"2020-04-16","EDAD (MES)":"6 Años 1 Meses 7 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"930250971","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":33,"DNI":92103341,"NOMBRE Y APELLIDO":"CARRANZA BARRETO TEO NOE","FECHA DE NACIMIENTO":"2020-03-25","EDAD (MES)":"6 Años 1 Meses 28 Dias","DIRECCION":"MAYASCON","TELEFONO":"969001703","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":34,"DNI":91789530,"NOMBRE Y APELLIDO":"SANDOVAL CESPEDES BELKY","FECHA DE NACIMIENTO":"2020-03-26","EDAD (MES)":"6 Años 1 Meses 27 Dias","DIRECCION":"TRAPOSA","TELEFONO":"91789530","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":35,"DNI":92050766,"NOMBRE Y APELLIDO":"SANCHEZ SANCHEZ SEBASTIAN","FECHA DE NACIMIENTO":"2020-09-08","EDAD (MES)":"5 Años 8 Meses 15 Dias","DIRECCION":"TRAPOSA","TELEFONO":"910401344","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":36,"DNI":92008080,"NOMBRE Y APELLIDO":"BAZAN GONZALES JHORDAN","FECHA DE NACIMIENTO":"2020-09-09","EDAD (MES)":"5 Años 8 Meses 14 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"943518097","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":37,"DNI":91812455,"NOMBRE Y APELLIDO":"SANCHEZ PAZOS KEYLI","FECHA DE NACIMIENTO":"2020-04-13","EDAD (MES)":"6 Años 1 Meses 10 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":38,"DNI":92094064,"NOMBRE Y APELLIDO":"VASQUEZ VALDERRAMA LIAM","FECHA DE NACIMIENTO":"2020-09-08","EDAD (MES)":"5 Años 8 Meses 15 Dias","DIRECCION":"TRAPOSA","TELEFONO":"921102192","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":39,"DNI":92079720,"NOMBRE Y APELLIDO":"FLORES MENDOZA EDIANI","FECHA DE NACIMIENTO":"2020-09-18","EDAD (MES)":"5 Años 8 Meses 5 Dias","DIRECCION":"TRAPOSA","TELEFONO":"927353134","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":40,"DNI":91971304,"NOMBRE Y APELLIDO":"ROQUE MENDOZA AGUSTIN","FECHA DE NACIMIENTO":"2020-04-09","EDAD (MES)":"6 Años 1 Meses 14 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"902434839","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":41,"DNI":92030232,"NOMBRE Y APELLIDO":"PAZOS DE LA CRUZ YARETIZI","FECHA DE NACIMIENTO":"2020-09-23","EDAD (MES)":"5 Años 8 Meses 0 Dias","DIRECCION":"TRAPOSA","TELEFONO":"910045862","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":42,"DNI":92105416,"NOMBRE Y APELLIDO":"JUAREZ GAONA LIAM ALEXANDER","FECHA DE NACIMIENTO":"2020-10-06","EDAD (MES)":"5 Años 7 Meses 17 Dias","DIRECCION":"TRAPOSA","TELEFONO":"916002258","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":43,"DNI":92068628,"NOMBRE Y APELLIDO":"SANCHEZ VASQUEZ LUCAS","FECHA DE NACIMIENTO":"2020-04-08","EDAD (MES)":"6 Años 1 Meses 15 Dias","DIRECCION":"MAYASCON","TELEFONO":"990518941","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":44,"DNI":92156607,"NOMBRE Y APELLIDO":"RODRIGO CARRANZA LUCIANA","FECHA DE NACIMIENTO":"2020-10-12","EDAD (MES)":"5 Años 7 Meses 11 Dias","DIRECCION":"TRAPOSA","TELEFONO":"925345531","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":45,"DNI":92070263,"NOMBRE Y APELLIDO":"DELGADO MENA DANNA","FECHA DE NACIMIENTO":"2020-10-20","EDAD (MES)":"5 Años 7 Meses 3 Dias","DIRECCION":"TRAPOSA","TELEFONO":"925377509","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":46,"DNI":92136859,"NOMBRE Y APELLIDO":"SANCHEZ DE LA CRUZ YADIEL","FECHA DE NACIMIENTO":"2020-10-26","EDAD (MES)":"5 Años 6 Meses 27 Dias","DIRECCION":"TRAPOSA","TELEFONO":"921805859","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":47,"DNI":92087521,"NOMBRE Y APELLIDO":"MANAYAY SEGUNDO DANNA","FECHA DE NACIMIENTO":"2020-10-30","EDAD (MES)":"5 Años 6 Meses 23 Dias","DIRECCION":"MAYASCON","TELEFONO":"948979683","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":48,"DNI":92107883,"NOMBRE Y APELLIDO":"ARANA DE LA CRUZ JOSABET","FECHA DE NACIMIENTO":"2020-11-12","EDAD (MES)":"5 Años 6 Meses 11 Dias","DIRECCION":"TRAPOSA","TELEFONO":"917011214","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":49,"DNI":92111416,"NOMBRE Y APELLIDO":"GONZALES SANCHEZ ADRIAN","FECHA DE NACIMIENTO":"2020-11-15","EDAD (MES)":"5 Años 6 Meses 8 Dias","DIRECCION":"MAYASCON","TELEFONO":"958441724","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":50,"DNI":92145868,"NOMBRE Y APELLIDO":"CHUNGA HUAMAN RAFAEL","FECHA DE NACIMIENTO":"2020-12-08","EDAD (MES)":"5 Años 5 Meses 15 Dias","DIRECCION":"TRAPOSA","TELEFONO":"916486563","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":51,"DNI":92171850,"NOMBRE Y APELLIDO":"SANCHEZ INOÑAN PRISCILA","FECHA DE NACIMIENTO":"2020-12-28","EDAD (MES)":"5 Años 4 Meses 25 Dias","DIRECCION":"TRAPOSA","TELEFONO":"921731323","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":52,"DNI":92037121,"NOMBRE Y APELLIDO":"SILVA HUAMAN ADRIAN","FECHA DE NACIMIENTO":"2020-09-28","EDAD (MES)":"5 Años 7 Meses 25 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"925203688","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":53,"DNI":91709662,"NOMBRE Y APELLIDO":"SILVA BAZAN BRENDA","FECHA DE NACIMIENTO":"2020-02-02","EDAD (MES)":"6 Años 3 Meses 21 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"925203688","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":54,"DNI":92177416,"NOMBRE Y APELLIDO":"REGALADO CAJUSOL LIAM","FECHA DE NACIMIENTO":"2021-01-01","EDAD (MES)":"5 Años 4 Meses 22 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"927921379","PROXIMA CITA":"2026-02-01","SEGUIMIENTO DE CITA":-111,"OBSERVACIONES":""},{"N°":55,"DNI":92189430,"NOMBRE Y APELLIDO":"CHIGNE DE LA CRUZ ARIANA","FECHA DE NACIMIENTO":"2021-01-11","EDAD (MES)":"5 Años 4 Meses 12 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"927357731","PROXIMA CITA":"2026-02-11","SEGUIMIENTO DE CITA":-101,"OBSERVACIONES":""},{"N°":56,"DNI":92270565,"NOMBRE Y APELLIDO":"DELGADO RODRIGUEZ LIA","FECHA DE NACIMIENTO":"2021-03-13","EDAD (MES)":"5 Años 2 Meses 10 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"931009959","PROXIMA CITA":"2026-03-13","SEGUIMIENTO DE CITA":-71,"OBSERVACIONES":""},{"N°":57,"DNI":92298137,"NOMBRE Y APELLIDO":"FERNANDEZ DELGADO JUAN","FECHA DE NACIMIENTO":"2021-03-31","EDAD (MES)":"5 Años 1 Meses 22 Dias","DIRECCION":"MAYASCON","TELEFONO":"984057356","PROXIMA CITA":"2026-03-31","SEGUIMIENTO DE CITA":-53,"OBSERVACIONES":""},{"N°":58,"DNI":92296184,"NOMBRE Y APELLIDO":"MENDOZA REGALADO ELDER","FECHA DE NACIMIENTO":"2021-03-31","EDAD (MES)":"5 Años 1 Meses 22 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"929298815","PROXIMA CITA":"2026-03-31","SEGUIMIENTO DE CITA":-53,"OBSERVACIONES":""},{"N°":59,"DNI":92295839,"NOMBRE Y APELLIDO":"DE LA CRUZ PEREA ANTHONY","FECHA DE NACIMIENTO":"2021-03-31","EDAD (MES)":"5 Años 1 Meses 22 Dias","DIRECCION":"TRAPOSA","TELEFONO":"921140245","PROXIMA CITA":"2026-03-31","SEGUIMIENTO DE CITA":-53,"OBSERVACIONES":""},{"N°":60,"DNI":92313747,"NOMBRE Y APELLIDO":"CESPEDES CESPEDES BLANCA","FECHA DE NACIMIENTO":"2021-04-13","EDAD (MES)":"5 Años 1 Meses 10 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":61,"DNI":92362417,"NOMBRE Y APELLIDO":"CALDERON CARLOS SOFIA","FECHA DE NACIMIENTO":"2021-04-18","EDAD (MES)":"5 Años 1 Meses 5 Dias","DIRECCION":"TRAPOSA","TELEFONO":"931025915","PROXIMA CITA":"2026-04-18","SEGUIMIENTO DE CITA":-35,"OBSERVACIONES":""},{"N°":62,"DNI":92329570,"NOMBRE Y APELLIDO":"PEREZ RODRIGUEZ MARIA","FECHA DE NACIMIENTO":"2021-04-24","EDAD (MES)":"5 Años 0 Meses 29 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":"2026-04-24","SEGUIMIENTO DE CITA":-29,"OBSERVACIONES":""},{"N°":63,"DNI":92334604,"NOMBRE Y APELLIDO":"RODRIGUEZ VASQUEZ DANNY","FECHA DE NACIMIENTO":"2021-04-27","EDAD (MES)":"5 Años 0 Meses 26 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"930020850","PROXIMA CITA":"2026-04-27","SEGUIMIENTO DE CITA":-26,"OBSERVACIONES":"PENDIENTE VACUNAS 4 AÑOS"},{"N°":64,"DNI":92458022,"NOMBRE Y APELLIDO":"REGALADO COLUNCH ESMERALDA","FECHA DE NACIMIENTO":"2021-06-04","EDAD (MES)":"4 Años 11 Meses 19 Dias","DIRECCION":"TRAPOSA","TELEFONO":"921156621","PROXIMA CITA":"2026-06-04","SEGUIMIENTO DE CITA":12,"OBSERVACIONES":""},{"N°":65,"DNI":92361075,"NOMBRE Y APELLIDO":"SANCHEZ RIMARACHIN ISMAEL","FECHA DE NACIMIENTO":"2021-05-16","EDAD (MES)":"5 Años 0 Meses 7 Dias","DIRECCION":"MAYASCON","TELEFONO":"954612239","PROXIMA CITA":"2026-05-16","SEGUIMIENTO DE CITA":-7,"OBSERVACIONES":""},{"N°":66,"DNI":92414101,"NOMBRE Y APELLIDO":"CORONEL LLAGUENTO LEONARDO","FECHA DE NACIMIENTO":"2021-06-19","EDAD (MES)":"4 Años 11 Meses 4 Dias","DIRECCION":"TRAPOSA","TELEFONO":"918834008","PROXIMA CITA":"2026-06-19","SEGUIMIENTO DE CITA":27,"OBSERVACIONES":""},{"N°":67,"DNI":92398473,"NOMBRE Y APELLIDO":"DIAZ LLAMO ENMA","FECHA DE NACIMIENTO":"2021-06-10","EDAD (MES)":"4 Años 11 Meses 13 Dias","DIRECCION":"TRAPOSA","TELEFONO":"916113642","PROXIMA CITA":"2026-06-10","SEGUIMIENTO DE CITA":18,"OBSERVACIONES":""},{"N°":68,"DNI":92454741,"NOMBRE Y APELLIDO":"SANCHEZ DIAZ LUAR","FECHA DE NACIMIENTO":"2021-06-27","EDAD (MES)":"4 Años 10 Meses 26 Dias","DIRECCION":"TRAPOSA","TELEFONO":"915986334","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":69,"DNI":92454747,"NOMBRE Y APELLIDO":"SANCHEZ DIAZ DYLAN","FECHA DE NACIMIENTO":"2021-06-27","EDAD (MES)":"4 Años 10 Meses 26 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":70,"DNI":92484684,"NOMBRE Y APELLIDO":"CARRANZA DELGADO ELIAS","FECHA DE NACIMIENTO":"2021-07-10","EDAD (MES)":"4 Años 10 Meses 13 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900776315","PROXIMA CITA":"2026-07-10","SEGUIMIENTO DE CITA":48,"OBSERVACIONES":""},{"N°":71,"DNI":92502061,"NOMBRE Y APELLIDO":"SILVA ROQUE BRIANA","FECHA DE NACIMIENTO":"2021-08-21","EDAD (MES)":"4 Años 9 Meses 2 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":"2026-08-21","SEGUIMIENTO DE CITA":90,"OBSERVACIONES":""},{"N°":72,"DNI":92523450,"NOMBRE Y APELLIDO":"LLAGUENTO ZULUETA DAGMAR","FECHA DE NACIMIENTO":"2021-09-04","EDAD (MES)":"4 Años 8 Meses 19 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"935089989","PROXIMA CITA":"2026-09-04","SEGUIMIENTO DE CITA":104,"OBSERVACIONES":""},{"N°":73,"DNI":92448571,"NOMBRE Y APELLIDO":"ZURITA SANTOS JHOEL","FECHA DE NACIMIENTO":"2021-07-15","EDAD (MES)":"4 Años 10 Meses 8 Dias","DIRECCION":"TRAPOSA","TELEFONO":"917522206","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":74,"DNI":92535915,"NOMBRE Y APELLIDO":"SANDOVAL RIMAPA AXEL","FECHA DE NACIMIENTO":"2021-09-13","EDAD (MES)":"4 Años 8 Meses 10 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"910920796","PROXIMA CITA":"2026-09-13","SEGUIMIENTO DE CITA":113,"OBSERVACIONES":""},{"N°":75,"DNI":92565864,"NOMBRE Y APELLIDO":"VERGARA MONTALVO BENJAMIN","FECHA DE NACIMIENTO":"2021-10-02","EDAD (MES)":"4 Años 7 Meses 21 Dias","DIRECCION":"MAYASCON","TELEFONO":"948891607","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":76,"DNI":92621068,"NOMBRE Y APELLIDO":"CHIGNE CHUNGA MIGUEL","FECHA DE NACIMIENTO":"2021-10-12","EDAD (MES)":"4 Años 7 Meses 11 Dias","DIRECCION":"TRAPOSA","TELEFONO":"918202584","PROXIMA CITA":"2026-06-12","SEGUIMIENTO DE CITA":20,"OBSERVACIONES":""},{"N°":77,"DNI":92620927,"NOMBRE Y APELLIDO":"VEGA DAVILA JARED","FECHA DE NACIMIENTO":"2021-09-30","EDAD (MES)":"4 Años 7 Meses 23 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"901845632","PROXIMA CITA":"2026-04-10","SEGUIMIENTO DE CITA":-43,"OBSERVACIONES":""},{"N°":78,"DNI":92586603,"NOMBRE Y APELLIDO":"PEREZ WALTER SONIA","FECHA DE NACIMIENTO":"2021-10-17","EDAD (MES)":"4 Años 7 Meses 6 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"901820227","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":79,"DNI":92605501,"NOMBRE Y APELLIDO":"DIAZ TOCTO NAOMI","FECHA DE NACIMIENTO":"2021-10-30","EDAD (MES)":"4 Años 6 Meses 23 Dias","DIRECCION":"MAYASCON","TELEFONO":"981934884","PROXIMA CITA":"2026-01-30","SEGUIMIENTO DE CITA":-113,"OBSERVACIONES":"PENDIENTE VACUNA DE 4 AÑOS"},{"N°":80,"DNI":92678256,"NOMBRE Y APELLIDO":"DE LA CRUZ CARLOS LUCY","FECHA DE NACIMIENTO":"2021-12-10","EDAD (MES)":"4 Años 5 Meses 13 Dias","DIRECCION":"TRAPOSA","TELEFONO":"918068568","PROXIMA CITA":"2026-02-10","SEGUIMIENTO DE CITA":-102,"OBSERVACIONES":"PENDIENTE VACUNAS"},{"N°":81,"DNI":92696617,"NOMBRE Y APELLIDO":"VASQUEZ SANCHEZ JUAN","FECHA DE NACIMIENTO":"2021-12-30","EDAD (MES)":"4 Años 4 Meses 23 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"918449624","PROXIMA CITA":"2026-07-30","SEGUIMIENTO DE CITA":68,"OBSERVACIONES":""},{"N°":82,"DNI":92171472,"NOMBRE Y APELLIDO":"OLIVERA REQUEJO KELVIN","FECHA DE NACIMIENTO":"2020-12-17","EDAD (MES)":"5 Años 5 Meses 6 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"926095204","PROXIMA CITA":"2026-08-17","SEGUIMIENTO DE CITA":86,"OBSERVACIONES":"SEGUNDA PROF ANTI"},{"N°":83,"DNI":92704408,"NOMBRE Y APELLIDO":"CESPEDES SAUCEDO YEICO","FECHA DE NACIMIENTO":"2022-01-09","EDAD (MES)":"4 Años 4 Meses 14 Dias","DIRECCION":"MAYASCON","TELEFONO":"917145855","PROXIMA CITA":"2026-02-09","SEGUIMIENTO DE CITA":-103,"OBSERVACIONES":""},{"N°":84,"DNI":92745185,"NOMBRE Y APELLIDO":"OLIVERA SOBERON ERICK","FECHA DE NACIMIENTO":"2022-01-27","EDAD (MES)":"4 Años 3 Meses 26 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"902712204","PROXIMA CITA":"2026-07-27","SEGUIMIENTO DE CITA":65,"OBSERVACIONES":""},{"N°":85,"DNI":92725385,"NOMBRE Y APELLIDO":"SANTOS BALDERA ANITA","FECHA DE NACIMIENTO":"2022-01-25","EDAD (MES)":"4 Años 3 Meses 28 Dias","DIRECCION":"TRAPOSA","TELEFONO":"930418164","PROXIMA CITA":"2026-09-25","SEGUIMIENTO DE CITA":125,"OBSERVACIONES":""},{"N°":86,"DNI":92746248,"NOMBRE Y APELLIDO":"NUÑEZ MONTEZA EMIR SHELYN","FECHA DE NACIMIENTO":"2022-02-05","EDAD (MES)":"4 Años 3 Meses 18 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"926419828","PROXIMA CITA":"2026-08-05","SEGUIMIENTO DE CITA":74,"OBSERVACIONES":""},{"N°":87,"DNI":92742525,"NOMBRE Y APELLIDO":"SILVA BAZAN PABLO DAEL","FECHA DE NACIMIENTO":"2022-02-05","EDAD (MES)":"4 Años 3 Meses 18 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"925203688","PROXIMA CITA":"2026-08-05","SEGUIMIENTO DE CITA":74,"OBSERVACIONES":""},{"N°":88,"DNI":92738546,"NOMBRE Y APELLIDO":"CESPEDES LAURENTE ESTEFANY","FECHA DE NACIMIENTO":"2022-02-03","EDAD (MES)":"4 Años 3 Meses 20 Dias","DIRECCION":"MAYASCON","TELEFONO":"921742331","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":89,"DNI":92783837,"NOMBRE Y APELLIDO":"ALBUJAR LLONTOP MIA","FECHA DE NACIMIENTO":"2022-02-03","EDAD (MES)":"4 Años 3 Meses 20 Dias","DIRECCION":"TRAPOSA","TELEFONO":"931519471","PROXIMA CITA":"2026-02-03","SEGUIMIENTO DE CITA":-109,"OBSERVACIONES":""},{"N°":90,"DNI":92778342,"NOMBRE Y APELLIDO":"TANTARICO HUAMAN ANGELES","FECHA DE NACIMIENTO":"2022-03-01","EDAD (MES)":"4 Años 2 Meses 22 Dias","DIRECCION":"TRAPOSA","TELEFONO":"928458284","PROXIMA CITA":"2026-09-01","SEGUIMIENTO DE CITA":101,"OBSERVACIONES":""},{"N°":91,"DNI":92820700,"NOMBRE Y APELLIDO":"DAVILA RODRIGUEZ BARUC","FECHA DE NACIMIENTO":"2022-03-16","EDAD (MES)":"4 Años 2 Meses 7 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"921042405","PROXIMA CITA":"2026-04-24","SEGUIMIENTO DE CITA":-29,"OBSERVACIONES":""},{"N°":92,"DNI":92822832,"NOMBRE Y APELLIDO":"CALDERON HEREDIA JEREMY","FECHA DE NACIMIENTO":"2022-03-29","EDAD (MES)":"4 Años 1 Meses 24 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900429335","PROXIMA CITA":"2026-03-29","SEGUIMIENTO DE CITA":-55,"OBSERVACIONES":""},{"N°":93,"DNI":92831288,"NOMBRE Y APELLIDO":"BAUTISTA PRIETO YELSID","FECHA DE NACIMIENTO":"2022-04-04","EDAD (MES)":"4 Años 1 Meses 19 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":"2026-04-04","SEGUIMIENTO DE CITA":-49,"OBSERVACIONES":""},{"N°":94,"DNI":92839854,"NOMBRE Y APELLIDO":"BAZAN CORONEL KAELLY","FECHA DE NACIMIENTO":"2022-04-10","EDAD (MES)":"4 Años 1 Meses 13 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"900928534","PROXIMA CITA":"2026-06-10","SEGUIMIENTO DE CITA":18,"OBSERVACIONES":"suplementacion y pendiente vac de 4 años"},{"N°":95,"DNI":92847946,"NOMBRE Y APELLIDO":"MONTAÑO JUAREZ LUZ","FECHA DE NACIMIENTO":"2022-04-16","EDAD (MES)":"4 Años 1 Meses 7 Dias","DIRECCION":"TRAPOSA","TELEFONO":"902141690","PROXIMA CITA":"2026-04-16","SEGUIMIENTO DE CITA":-37,"OBSERVACIONES":""},{"N°":96,"DNI":92864731,"NOMBRE Y APELLIDO":"DE LA CRUZ BARRIOS EMANUEL","FECHA DE NACIMIENTO":"2022-04-23","EDAD (MES)":"4 Años 1 Meses 0 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"937474868","PROXIMA CITA":"2026-04-23","SEGUIMIENTO DE CITA":-30,"OBSERVACIONES":""},{"N°":97,"DNI":92876592,"NOMBRE Y APELLIDO":"PEREZ CALDERON SEGUNDO","FECHA DE NACIMIENTO":"2022-04-28","EDAD (MES)":"4 Años 0 Meses 25 Dias","DIRECCION":"TRAPOSA","TELEFONO":"921505880","PROXIMA CITA":"2026-04-28","SEGUIMIENTO DE CITA":-25,"OBSERVACIONES":""},{"N°":98,"DNI":92860195,"NOMBRE Y APELLIDO":"CARRILLO AGUINAGA LEO","FECHA DE NACIMIENTO":"2022-04-23","EDAD (MES)":"4 Años 1 Meses 0 Dias","DIRECCION":"TRAPOSA","TELEFONO":"954914190","PROXIMA CITA":"2026-04-23","SEGUIMIENTO DE CITA":-30,"OBSERVACIONES":""},{"N°":99,"DNI":92885717,"NOMBRE Y APELLIDO":"ODAR OLIVERA LUCIANA","FECHA DE NACIMIENTO":"2022-05-02","EDAD (MES)":"4 Años 0 Meses 21 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"931929279","PROXIMA CITA":"2026-05-02","SEGUIMIENTO DE CITA":-21,"OBSERVACIONES":""},{"N°":100,"DNI":92918897,"NOMBRE Y APELLIDO":"DIAZ VASQUEZ YERIK","FECHA DE NACIMIENTO":"2022-05-05","EDAD (MES)":"4 Años 0 Meses 18 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"919050728","PROXIMA CITA":"2026-05-05","SEGUIMIENTO DE CITA":-18,"OBSERVACIONES":""},{"N°":101,"DNI":92942308,"NOMBRE Y APELLIDO":"CARMONA ROJAS THIAGO","FECHA DE NACIMIENTO":"2022-06-08","EDAD (MES)":"3 Años 11 Meses 15 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"935500342","PROXIMA CITA":"2026-06-08","SEGUIMIENTO DE CITA":16,"OBSERVACIONES":""},{"N°":102,"DNI":92967166,"NOMBRE Y APELLIDO":"CARLOS BACANEGRA CAMILA","FECHA DE NACIMIENTO":"2022-06-09","EDAD (MES)":"3 Años 11 Meses 14 Dias","DIRECCION":"MAYASCON","TELEFONO":"918885553","PROXIMA CITA":"2026-06-09","SEGUIMIENTO DE CITA":17,"OBSERVACIONES":""},{"N°":103,"DNI":92900874,"NOMBRE Y APELLIDO":"DELGADO CAMPOS LIA","FECHA DE NACIMIENTO":"2022-05-21","EDAD (MES)":"4 Años 0 Meses 2 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"925746760","PROXIMA CITA":"2026-05-21","SEGUIMIENTO DE CITA":-2,"OBSERVACIONES":""},{"N°":104,"DNI":92985831,"NOMBRE Y APELLIDO":"REGALADO CAJUSOL YATZURI","FECHA DE NACIMIENTO":"2022-07-21","EDAD (MES)":"3 Años 10 Meses 2 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"950356084","PROXIMA CITA":"2026-07-21","SEGUIMIENTO DE CITA":59,"OBSERVACIONES":""},{"N°":105,"DNI":92991919,"NOMBRE Y APELLIDO":"DE LA CRUZ ZAMORA EINER","FECHA DE NACIMIENTO":"2022-07-26","EDAD (MES)":"3 Años 9 Meses 27 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"925320887","PROXIMA CITA":"2026-07-26","SEGUIMIENTO DE CITA":64,"OBSERVACIONES":""},{"N°":106,"DNI":92979543,"NOMBRE Y APELLIDO":"MUNDACA PAREDES LIAM","FECHA DE NACIMIENTO":"2022-07-17","EDAD (MES)":"3 Años 10 Meses 6 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":"2026-07-17","SEGUIMIENTO DE CITA":55,"OBSERVACIONES":""},{"N°":107,"DNI":92960962,"NOMBRE Y APELLIDO":"MONTAÑO CHUNGA GIA ALICE","FECHA DE NACIMIENTO":"2022-07-04","EDAD (MES)":"3 Años 10 Meses 19 Dias","DIRECCION":"TRAPOSA","TELEFONO":"901830245","PROXIMA CITA":"2026-02-04","SEGUIMIENTO DE CITA":-108,"OBSERVACIONES":""},{"N°":108,"DNI":93011580,"NOMBRE Y APELLIDO":"GONZALES SANCHEZ KILLIAN","FECHA DE NACIMIENTO":"2022-08-09","EDAD (MES)":"3 Años 9 Meses 14 Dias","DIRECCION":"MAYASCON","TELEFONO":"958441724","PROXIMA CITA":"2026-01-28","SEGUIMIENTO DE CITA":-115,"OBSERVACIONES":""},{"N°":109,"DNI":92972846,"NOMBRE Y APELLIDO":"DAVILA PISCO ALONDRA","FECHA DE NACIMIENTO":"2022-07-12","EDAD (MES)":"3 Años 10 Meses 11 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"925288654","PROXIMA CITA":"2026-02-12","SEGUIMIENTO DE CITA":-100,"OBSERVACIONES":""},{"N°":110,"DNI":92974115,"NOMBRE Y APELLIDO":"AGUINAGA ZAMORA BRITANY","FECHA DE NACIMIENTO":"2022-07-13","EDAD (MES)":"3 Años 10 Meses 10 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":"2026-07-13","SEGUIMIENTO DE CITA":51,"OBSERVACIONES":""},{"N°":111,"DNI":93028489,"NOMBRE Y APELLIDO":"MEJIA LLANOS ADRIAN","FECHA DE NACIMIENTO":"2022-07-23","EDAD (MES)":"3 Años 10 Meses 0 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":"2024-04-14","SEGUIMIENTO DE CITA":-769,"OBSERVACIONES":""},{"N°":112,"DNI":93080208,"NOMBRE Y APELLIDO":"DIAZ LLAGUENTO ZOE","FECHA DE NACIMIENTO":"2022-09-28","EDAD (MES)":"3 Años 7 Meses 25 Dias","DIRECCION":"TRAPOSA","TELEFONO":"901057368","PROXIMA CITA":"2026-09-28","SEGUIMIENTO DE CITA":128,"OBSERVACIONES":""},{"N°":113,"DNI":93081377,"NOMBRE Y APELLIDO":"BARRETO VALLEJOS BENJAMIN","FECHA DE NACIMIENTO":"2022-09-30","EDAD (MES)":"3 Años 7 Meses 23 Dias","DIRECCION":"TRAPOSA","TELEFONO":"901820217","PROXIMA CITA":"2026-09-30","SEGUIMIENTO DE CITA":130,"OBSERVACIONES":""},{"N°":114,"DNI":93111736,"NOMBRE Y APELLIDO":"FUSTAMANTE MONTALVO RICARDO","FECHA DE NACIMIENTO":"2022-09-26","EDAD (MES)":"3 Años 7 Meses 27 Dias","DIRECCION":"TRAPOSA","TELEFONO":"","PROXIMA CITA":"2026-09-26","SEGUIMIENTO DE CITA":126,"OBSERVACIONES":""},{"N°":115,"DNI":93048505,"NOMBRE Y APELLIDO":"BACA VASQUEZ HAKAN MATEO","FECHA DE NACIMIENTO":"2022-09-06","EDAD (MES)":"3 Años 8 Meses 17 Dias","DIRECCION":"TRAPOSA","TELEFONO":"954838971","PROXIMA CITA":"2026-09-06","SEGUIMIENTO DE CITA":106,"OBSERVACIONES":""},{"N°":116,"DNI":93137142,"NOMBRE Y APELLIDO":"MENDOZA RAMOS CIELITO","FECHA DE NACIMIENTO":"2022-11-13","EDAD (MES)":"3 Años 6 Meses 10 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"921074199","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":117,"DNI":93078036,"NOMBRE Y APELLIDO":"RIMARACHIN CARRANZA FLOR","FECHA DE NACIMIENTO":"2022-09-19","EDAD (MES)":"3 Años 8 Meses 4 Dias","DIRECCION":"MAYASCON","TELEFONO":"984091338","PROXIMA CITA":"2026-09-20","SEGUIMIENTO DE CITA":120,"OBSERVACIONES":""},{"N°":118,"DNI":93160017,"NOMBRE Y APELLIDO":"DIAZ ALTAMIRANO EYTAN","FECHA DE NACIMIENTO":"2022-11-21","EDAD (MES)":"3 Años 6 Meses 2 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900507613","PROXIMA CITA":"2026-02-21","SEGUIMIENTO DE CITA":-91,"OBSERVACIONES":"VACUNAS ATRASADAS"},{"N°":119,"DNI":93203907,"NOMBRE Y APELLIDO":"LLAGUENTO TORRES AYZE","FECHA DE NACIMIENTO":"2022-11-30","EDAD (MES)":"3 Años 5 Meses 23 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900800027","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":120,"DNI":93184188,"NOMBRE Y APELLIDO":"BAZAN MALCA ALEXA","FECHA DE NACIMIENTO":"2022-12-19","EDAD (MES)":"3 Años 5 Meses 4 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"935009127","PROXIMA CITA":"2026-06-19","SEGUIMIENTO DE CITA":27,"OBSERVACIONES":""},{"N°":121,"DNI":93545541,"NOMBRE Y APELLIDO":"CALDERON HEREDIA ENZO JHONAY","FECHA DE NACIMIENTO":"2023-09-12","EDAD (MES)":"2 Años 8 Meses 11 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900429335","PROXIMA CITA":"2025-09-12","SEGUIMIENTO DE CITA":-253,"OBSERVACIONES":"VACUNAS"},{"N°":122,"DNI":93674499,"NOMBRE Y APELLIDO":"CAMPOS CAMPOS HASLEY MAYTE","FECHA DE NACIMIENTO":"2023-12-27","EDAD (MES)":"2 Años 4 Meses 26 Dias","DIRECCION":"MAYASCON","TELEFONO":"900574145","PROXIMA CITA":"2026-06-27","SEGUIMIENTO DE CITA":35,"OBSERVACIONES":""},{"N°":123,"DNI":93488872,"NOMBRE Y APELLIDO":"CARRANZA RIMAPA PAULA","FECHA DE NACIMIENTO":"2023-07-26","EDAD (MES)":"2 Años 9 Meses 27 Dias","DIRECCION":"MAYASCON","TELEFONO":"929679316","PROXIMA CITA":"2024-12-02","SEGUIMIENTO DE CITA":-537,"OBSERVACIONES":""},{"N°":124,"DNI":93395095,"NOMBRE Y APELLIDO":"CARRANZA SANCHEZ LUCIANA","FECHA DE NACIMIENTO":"2023-05-21","EDAD (MES)":"3 Años 0 Meses 2 Dias","DIRECCION":"MAYASCON","TELEFONO":"935173886","PROXIMA CITA":"2026-05-21","SEGUIMIENTO DE CITA":-2,"OBSERVACIONES":""},{"N°":125,"DNI":93431808,"NOMBRE Y APELLIDO":"CARRILLO DELGADO DAYANA","FECHA DE NACIMIENTO":"2023-06-19","EDAD (MES)":"2 Años 11 Meses 4 Dias","DIRECCION":"MAYASCON","TELEFONO":"938632220","PROXIMA CITA":"2026-06-19","SEGUIMIENTO DE CITA":27,"OBSERVACIONES":""},{"N°":126,"DNI":93408442,"NOMBRE Y APELLIDO":"CARRILLO SANCHEZ LIAM DAYRON","FECHA DE NACIMIENTO":"2023-05-26","EDAD (MES)":"2 Años 11 Meses 27 Dias","DIRECCION":"MAYASCON","TELEFONO":"","PROXIMA CITA":"2026-05-26","SEGUIMIENTO DE CITA":3,"OBSERVACIONES":""},{"N°":127,"DNI":93633909,"NOMBRE Y APELLIDO":"CESPEDES DELGADO AILANY KARELY","FECHA DE NACIMIENTO":"2023-11-30","EDAD (MES)":"2 Años 5 Meses 23 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"931987269","PROXIMA CITA":"2026-06-06","SEGUIMIENTO DE CITA":14,"OBSERVACIONES":""},{"N°":128,"DNI":93434541,"NOMBRE Y APELLIDO":"CORONEL LLAGUENTO ALESSANDRO","FECHA DE NACIMIENTO":"2023-06-16","EDAD (MES)":"2 Años 11 Meses 7 Dias","DIRECCION":"TRAPOSA","TELEFONO":"918834008","PROXIMA CITA":"2026-02-22","SEGUIMIENTO DE CITA":-90,"OBSERVACIONES":""},{"N°":129,"DNI":93545644,"NOMBRE Y APELLIDO":"CUÑACHI CARRILLO EIMY ZEINEP","FECHA DE NACIMIENTO":"2023-07-16","EDAD (MES)":"2 Años 10 Meses 7 Dias","DIRECCION":"MAYASCON","TELEFONO":"927717240","PROXIMA CITA":"2026-02-25","SEGUIMIENTO DE CITA":-87,"OBSERVACIONES":""},{"N°":130,"DNI":93542764,"NOMBRE Y APELLIDO":"DIAZ CAJUSOL IVAN ADRIEL","FECHA DE NACIMIENTO":"2023-09-16","EDAD (MES)":"2 Años 8 Meses 7 Dias","DIRECCION":"MAYASCON","TELEFONO":"916235204","PROXIMA CITA":"2026-04-25","SEGUIMIENTO DE CITA":-28,"OBSERVACIONES":""},{"N°":131,"DNI":93456143,"NOMBRE Y APELLIDO":"DIAZ DELGADO MILAN EMIR","FECHA DE NACIMIENTO":"2023-07-08","EDAD (MES)":"2 Años 10 Meses 15 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"917019295","PROXIMA CITA":"2026-07-08","SEGUIMIENTO DE CITA":46,"OBSERVACIONES":""},{"N°":132,"DNI":93339030,"NOMBRE Y APELLIDO":"JOSE ALBERTO LARA SANTACRUZ","FECHA DE NACIMIENTO":"2023-03-27","EDAD (MES)":"3 Años 1 Meses 26 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"928068594","PROXIMA CITA":"2026-03-27","SEGUIMIENTO DE CITA":-57,"OBSERVACIONES":""},{"N°":133,"DNI":93301321,"NOMBRE Y APELLIDO":"MEJIA CALDERON EITAN JHADIEL","FECHA DE NACIMIENTO":"2023-03-11","EDAD (MES)":"3 Años 2 Meses 12 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":"2026-09-11","SEGUIMIENTO DE CITA":111,"OBSERVACIONES":""},{"N°":134,"DNI":93346580,"NOMBRE Y APELLIDO":"MENDOZA MONTALVO TANIA","FECHA DE NACIMIENTO":"2023-04-14","EDAD (MES)":"3 Años 1 Meses 9 Dias","DIRECCION":"MAYASCON","TELEFONO":"901286665","PROXIMA CITA":"2023-12-30","SEGUIMIENTO DE CITA":-875,"OBSERVACIONES":""},{"N°":135,"DNI":93271836,"NOMBRE Y APELLIDO":"PAIVA TORRES ITZEL NAIROBI","FECHA DE NACIMIENTO":"2023-02-20","EDAD (MES)":"3 Años 3 Meses 3 Dias","DIRECCION":"TRAPOSA","TELEFONO":"915967971","PROXIMA CITA":"2026-08-20","SEGUIMIENTO DE CITA":89,"OBSERVACIONES":""},{"N°":136,"DNI":93551377,"NOMBRE Y APELLIDO":"POETIZA YNUMA ARIANA ALEJANDRO","FECHA DE NACIMIENTO":"2023-09-21","EDAD (MES)":"2 Años 8 Meses 2 Dias","DIRECCION":"MAYASCON","TELEFONO":"925498120","PROXIMA CITA":"2025-05-21","SEGUIMIENTO DE CITA":-367,"OBSERVACIONES":""},{"N°":137,"DNI":93440376,"NOMBRE Y APELLIDO":"REGALADO COLUNCHE MILDER ABDIAS","FECHA DE NACIMIENTO":"2023-06-19","EDAD (MES)":"2 Años 11 Meses 4 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"901619863","PROXIMA CITA":"2026-06-19","SEGUIMIENTO DE CITA":27,"OBSERVACIONES":""},{"N°":138,"DNI":93202459,"NOMBRE Y APELLIDO":"RIMAPA ALARCON KEYSEN","FECHA DE NACIMIENTO":"2023-01-02","EDAD (MES)":"3 Años 4 Meses 21 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"935454718","PROXIMA CITA":"2026-07-02","SEGUIMIENTO DE CITA":40,"OBSERVACIONES":""},{"N°":139,"DNI":93471794,"NOMBRE Y APELLIDO":"RIMAPA LLAGUENTO MARYAN","FECHA DE NACIMIENTO":"2023-07-13","EDAD (MES)":"2 Años 10 Meses 10 Dias","DIRECCION":"TRAPOSA","TELEFONO":"93471794","PROXIMA CITA":"2026-07-13","SEGUIMIENTO DE CITA":51,"OBSERVACIONES":""},{"N°":140,"DNI":93541877,"NOMBRE Y APELLIDO":"SALAZAR TARRILLO NAHOMY","FECHA DE NACIMIENTO":"2023-09-15","EDAD (MES)":"2 Años 8 Meses 8 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"916790711","PROXIMA CITA":"2026-09-15","SEGUIMIENTO DE CITA":115,"OBSERVACIONES":""},{"N°":141,"DNI":93352650,"NOMBRE Y APELLIDO":"SANCHEZ DELGADO LEONARDO","FECHA DE NACIMIENTO":"2023-04-19","EDAD (MES)":"3 Años 1 Meses 4 Dias","DIRECCION":"MAYASCON","TELEFONO":"976756709","PROXIMA CITA":"2026-04-19","SEGUIMIENTO DE CITA":-34,"OBSERVACIONES":""},{"N°":142,"DNI":93488706,"NOMBRE Y APELLIDO":"SILVA DIAZ EIDER SAMIR","FECHA DE NACIMIENTO":"2023-07-31","EDAD (MES)":"2 Años 9 Meses 22 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"930252361","PROXIMA CITA":"2026-07-31","SEGUIMIENTO DE CITA":69,"OBSERVACIONES":""},{"N°":143,"DNI":93311772,"NOMBRE Y APELLIDO":"TUÑOQUE PEREZ ALESSIA","FECHA DE NACIMIENTO":"2023-03-20","EDAD (MES)":"3 Años 2 Meses 3 Dias","DIRECCION":"TRAPOSA","TELEFONO":"926077602","PROXIMA CITA":"2026-08-20","SEGUIMIENTO DE CITA":89,"OBSERVACIONES":""},{"N°":144,"DNI":93257298,"NOMBRE Y APELLIDO":"VALDERRAMA TORRES IRINA","FECHA DE NACIMIENTO":"2023-02-09","EDAD (MES)":"3 Años 3 Meses 14 Dias","DIRECCION":"TRAPOSA","TELEFONO":"918908939","PROXIMA CITA":"2026-08-09","SEGUIMIENTO DE CITA":78,"OBSERVACIONES":""},{"N°":145,"DNI":93541852,"NOMBRE Y APELLIDO":"ZAMORA ROJAS MOISES ISAREL","FECHA DE NACIMIENTO":"2023-08-29","EDAD (MES)":"2 Años 8 Meses 24 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"915996455","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":""},{"N°":146,"DNI":93681282,"NOMBRE Y APELLIDO":"BAZAN CUEVA SAID SEBASTIAN","FECHA DE NACIMIENTO":"2024-01-10","EDAD (MES)":"2 Años 4 Meses 13 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900039569","PROXIMA CITA":"2025-04-10","SEGUIMIENTO DE CITA":-408,"OBSERVACIONES":"VACUNAS ATRASADAS"},{"N°":147,"DNI":93719571,"NOMBRE Y APELLIDO":"DE LA CRUZ MANAYAY YONSU","FECHA DE NACIMIENTO":"2024-02-12","EDAD (MES)":"2 Años 3 Meses 11 Dias","DIRECCION":"TRAPOSA","TELEFONO":"931803071","PROXIMA CITA":"2026-08-12","SEGUIMIENTO DE CITA":81,"OBSERVACIONES":""},{"N°":148,"DNI":93742395,"NOMBRE Y APELLIDO":"MUNDACA RAMIREZ AZUMY ANTONELLA","FECHA DE NACIMIENTO":"2024-03-02","EDAD (MES)":"2 Años 2 Meses 21 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900044860","PROXIMA CITA":"2026-09-02","SEGUIMIENTO DE CITA":102,"OBSERVACIONES":""},{"N°":149,"DNI":93768119,"NOMBRE Y APELLIDO":"GONZALES DELGADO ANDRÉ","FECHA DE NACIMIENTO":"2024-03-22","EDAD (MES)":"2 Años 2 Meses 1 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"921280250","PROXIMA CITA":"2026-04-24","SEGUIMIENTO DE CITA":-29,"OBSERVACIONES":"suplementacion"},{"N°":150,"DNI":93741307,"NOMBRE Y APELLIDO":"DAVILA PISCO IAN EMIR","FECHA DE NACIMIENTO":"2024-03-01","EDAD (MES)":"2 Años 2 Meses 22 Dias","DIRECCION":"MAYASCON","TELEFONO":"925288654","PROXIMA CITA":"2026-03-01","SEGUIMIENTO DE CITA":-83,"OBSERVACIONES":""},{"N°":151,"DNI":93761726,"NOMBRE Y APELLIDO":"TAPIA RIMARACHIN JAREB BRIAN","FECHA DE NACIMIENTO":"2024-03-17","EDAD (MES)":"2 Años 2 Meses 6 Dias","DIRECCION":"TRAPOSA","TELEFONO":"917729787","PROXIMA CITA":"2026-05-07","SEGUIMIENTO DE CITA":-16,"OBSERVACIONES":"suplementacion"},{"N°":152,"DNI":93811870,"NOMBRE Y APELLIDO":"CAJUSOL MANAYAY GENESIS JERUSALEN","FECHA DE NACIMIENTO":"2024-04-25","EDAD (MES)":"2 Años 0 Meses 28 Dias","DIRECCION":"MAYASCON","TELEFONO":"","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":"VACUNAS ATRASADAS"},{"N°":153,"DNI":93844790,"NOMBRE Y APELLIDO":"SANCHEZ CHUNGA JIREH GABRIEL","FECHA DE NACIMIENTO":"2024-05-11","EDAD (MES)":"2 Años 0 Meses 12 Dias","DIRECCION":"TRAPOSA","TELEFONO":"917123042","PROXIMA CITA":"2026-05-23","SEGUIMIENTO DE CITA":0,"OBSERVACIONES":""},{"N°":154,"DNI":93909694,"NOMBRE Y APELLIDO":"CESPEDES PURIHUAMAN BRAYAN SMITH","FECHA DE NACIMIENTO":"2024-07-19","EDAD (MES)":"1 Años 10 Meses 4 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"","PROXIMA CITA":"2026-04-19","SEGUIMIENTO DE CITA":-34,"OBSERVACIONES":""},{"N°":155,"DNI":93928772,"NOMBRE Y APELLIDO":"ESTELA VALLEJOS ALESSIA GERALDINE","FECHA DE NACIMIENTO":"2024-07-28","EDAD (MES)":"1 Años 9 Meses 25 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"901847410","PROXIMA CITA":"2026-04-28","SEGUIMIENTO DE CITA":-25,"OBSERVACIONES":""},{"N°":156,"DNI":94067255,"NOMBRE Y APELLIDO":"PURIHUAMAN ALVARADO KILIAN","FECHA DE NACIMIENTO":"2024-12-08","EDAD (MES)":"1 Años 5 Meses 15 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900317430","PROXIMA CITA":null,"SEGUIMIENTO DE CITA":null,"OBSERVACIONES":"PASO CONTROL EN LIMA"},{"N°":157,"DNI":94074132,"NOMBRE Y APELLIDO":"FERNANDEZ DE LA CRUZ ASTRID AITANA","FECHA DE NACIMIENTO":"2024-12-15","EDAD (MES)":"1 Años 5 Meses 8 Dias","DIRECCION":"MAYASCON","TELEFONO":"930766359","PROXIMA CITA":"2026-05-15","SEGUIMIENTO DE CITA":-8,"OBSERVACIONES":"SUPLEMENTACION"},{"N°":158,"DNI":94100553,"NOMBRE Y APELLIDO":"PAIVA TORRES KAILANY DARLIN","FECHA DE NACIMIENTO":"2025-01-08","EDAD (MES)":"1 Años 4 Meses 15 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900368858","PROXIMA CITA":"2026-04-22","SEGUIMIENTO DE CITA":-31,"OBSERVACIONES":"PENDIENTE VACUNA"},{"N°":159,"DNI":94136202,"NOMBRE Y APELLIDO":"AGUILAR AGUILAR ELIAM DARECK","FECHA DE NACIMIENTO":"2025-01-28","EDAD (MES)":"1 Años 3 Meses 25 Dias","DIRECCION":"MAYASCON","TELEFONO":"930893251","PROXIMA CITA":"2026-01-28","SEGUIMIENTO DE CITA":-115,"OBSERVACIONES":""},{"N°":160,"DNI":94137427,"NOMBRE Y APELLIDO":"CAMPOS TOCTO ANDRICK DEREK","FECHA DE NACIMIENTO":"2025-02-06","EDAD (MES)":"1 Años 3 Meses 17 Dias","DIRECCION":"MAYASCON","TELEFONO":"935619273","PROXIMA CITA":"2026-02-06","SEGUIMIENTO DE CITA":-106,"OBSERVACIONES":""},{"N°":161,"DNI":94161668,"NOMBRE Y APELLIDO":"RAMIREZ DIAZ AYLANY VICTORIA","FECHA DE NACIMIENTO":"2025-03-04","EDAD (MES)":"1 Años 2 Meses 19 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"930834542","PROXIMA CITA":"2026-04-19","SEGUIMIENTO DE CITA":-34,"OBSERVACIONES":"VACUNA VARICELA"},{"N°":162,"DNI":94176809,"NOMBRE Y APELLIDO":"PEREZ RODRIGUEZ BENJAMIN","FECHA DE NACIMIENTO":"2025-03-15","EDAD (MES)":"1 Años 2 Meses 8 Dias","DIRECCION":"TRAPOSA","TELEFONO":"925204364","PROXIMA CITA":"2026-05-18","SEGUIMIENTO DE CITA":-5,"OBSERVACIONES":""},{"N°":163,"DNI":94194636,"NOMBRE Y APELLIDO":"FLORES MUÑOZ CELESTE CATALINA","FECHA DE NACIMIENTO":"2025-02-24","EDAD (MES)":"1 Años 2 Meses 29 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"930834115","PROXIMA CITA":"2026-05-24","SEGUIMIENTO DE CITA":1,"OBSERVACIONES":"VACUNA VARICELA"},{"N°":164,"DNI":94229669,"NOMBRE Y APELLIDO":"BAUTISTA PRIETO EITHAN ADRIEL","FECHA DE NACIMIENTO":"2025-04-30","EDAD (MES)":"1 Años 0 Meses 23 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"926179913","PROXIMA CITA":"2026-04-30","SEGUIMIENTO DE CITA":-23,"OBSERVACIONES":""},{"N°":165,"DNI":94241184,"NOMBRE Y APELLIDO":"CARRILLO SANCHEZ MICAELA LIZET","FECHA DE NACIMIENTO":"2025-05-10","EDAD (MES)":"1 Años 0 Meses 13 Dias","DIRECCION":"MAYASCON","TELEFONO":"916820831","PROXIMA CITA":"2026-05-10","SEGUIMIENTO DE CITA":-13,"OBSERVACIONES":""},{"N°":166,"DNI":94254826,"NOMBRE Y APELLIDO":"VILLALOBOS MARTINEZ LUANA KALESSI","FECHA DE NACIMIENTO":"2025-05-22","EDAD (MES)":"1 Años 0 Meses 1 Dias","DIRECCION":"MAYASCON","TELEFONO":"926039857","PROXIMA CITA":"2026-05-22","SEGUIMIENTO DE CITA":-1,"OBSERVACIONES":""},{"N°":167,"DNI":94268728,"NOMBRE Y APELLIDO":"PAZOS AGUINAGA AITANA EMILY","FECHA DE NACIMIENTO":"2025-06-03","EDAD (MES)":"0 Años 11 Meses 20 Dias","DIRECCION":"TRAPOSA","TELEFONO":"928774873","PROXIMA CITA":"2026-06-03","SEGUIMIENTO DE CITA":11,"OBSERVACIONES":""},{"N°":168,"DNI":94314746,"NOMBRE Y APELLIDO":"LUCA FABIAN ALEJANDRO ENCINAS LLAGUENTO","FECHA DE NACIMIENTO":"2025-07-08","EDAD (MES)":"0 Años 10 Meses 15 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"955055123","PROXIMA CITA":"2026-05-08","SEGUIMIENTO DE CITA":-15,"OBSERVACIONES":""},{"N°":169,"DNI":94327101,"NOMBRE Y APELLIDO":"PAREDES VASQUEZ BASTIAN GADIEL","FECHA DE NACIMIENTO":"2025-07-26","EDAD (MES)":"0 Años 9 Meses 27 Dias","DIRECCION":"TRAPOSA","TELEFONO":"915972742","PROXIMA CITA":"2026-04-27","SEGUIMIENTO DE CITA":-26,"OBSERVACIONES":""},{"N°":170,"DNI":94332781,"NOMBRE Y APELLIDO":"CARRANZA SAUCEDO EYLAN DERICK","FECHA DE NACIMIENTO":"2025-07-30","EDAD (MES)":"0 Años 9 Meses 23 Dias","DIRECCION":"TRAPOSA","TELEFONO":"916707395","PROXIMA CITA":"2026-05-07","SEGUIMIENTO DE CITA":-16,"OBSERVACIONES":"CONTROL CRED"},{"N°":171,"DNI":94332931,"NOMBRE Y APELLIDO":"LOPEZ TAPIA LISANDER GOJAN ADRIEL","FECHA DE NACIMIENTO":"2025-08-01","EDAD (MES)":"0 Años 9 Meses 22 Dias","DIRECCION":"TRAPOSA","TELEFONO":"921812252","PROXIMA CITA":"2026-02-01","SEGUIMIENTO DE CITA":-111,"OBSERVACIONES":""},{"N°":172,"DNI":94382682,"NOMBRE Y APELLIDO":"ACUÑA TORRES AIZA JACKELINE","FECHA DE NACIMIENTO":"2025-09-14","EDAD (MES)":"0 Años 8 Meses 9 Dias","DIRECCION":"TRAPOSA","TELEFONO":"999657933","PROXIMA CITA":"2026-05-15","SEGUIMIENTO DE CITA":-8,"OBSERVACIONES":"SUPLEMENTACION"},{"N°":173,"DNI":94451234,"NOMBRE Y APELLIDO":"CARRASCO GONZALES DANNY JHARED","FECHA DE NACIMIENTO":"2025-11-17","EDAD (MES)":"0 Años 6 Meses 6 Dias","DIRECCION":"MAYASCON","TELEFONO":"966286326","PROXIMA CITA":"2026-05-17","SEGUIMIENTO DE CITA":-6,"OBSERVACIONES":""},{"N°":174,"DNI":94455625,"NOMBRE Y APELLIDO":"DAVILA RODRIGUEZ DIEGO OBED","FECHA DE NACIMIENTO":"2025-11-21","EDAD (MES)":"0 Años 6 Meses 2 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"900264218","PROXIMA CITA":"2026-05-21","SEGUIMIENTO DE CITA":-2,"OBSERVACIONES":""},{"N°":175,"DNI":94336164,"NOMBRE Y APELLIDO":"MANAYAY VILLANUEVA GIA TEREZA","FECHA DE NACIMIENTO":"2025-08-04","EDAD (MES)":"0 Años 9 Meses 19 Dias","DIRECCION":"MAYASCON","TELEFONO":"910349183","PROXIMA CITA":"2026-05-06","SEGUIMIENTO DE CITA":-17,"OBSERVACIONES":""},{"N°":176,"DNI":94540458,"NOMBRE Y APELLIDO":"TOCTO EDQUEN NEYTHAN EMIR","FECHA DE NACIMIENTO":"2026-02-08","EDAD (MES)":"0 Años 3 Meses 15 Dias","DIRECCION":"DESAGUADERO","TELEFONO":"928344764","PROXIMA CITA":"2026-05-11","SEGUIMIENTO DE CITA":-12,"OBSERVACIONES":""},{"N°":177,"DNI":94569653,"NOMBRE Y APELLIDO":"TANTARICO DELGADO JEIDIMAR ESTHER","FECHA DE NACIMIENTO":"2026-03-06","EDAD (MES)":"0 Años 2 Meses 17 Dias","DIRECCION":"TRAPOSA","TELEFONO":"910243665","PROXIMA CITA":"2026-05-06","SEGUIMIENTO DE CITA":-17,"OBSERVACIONES":""},{"N°":178,"DNI":94602857,"NOMBRE Y APELLIDO":"ARROYO MONTAÑO LUANA CAMILIA","FECHA DE NACIMIENTO":"2026-04-03","EDAD (MES)":"0 Años 1 Meses 20 Dias","DIRECCION":"TRAPOSA","TELEFONO":"901634262","PROXIMA CITA":"2026-05-03","SEGUIMIENTO DE CITA":-20,"OBSERVACIONES":""},{"N°":179,"DNI":94608112,"NOMBRE Y APELLIDO":"LLANOS SANTAMARIA ZOE VALENTINA","FECHA DE NACIMIENTO":"2026-04-08","EDAD (MES)":"0 Años 1 Meses 15 Dias","DIRECCION":"TRAPOSA","TELEFONO":"900049590","PROXIMA CITA":"2026-04-27","SEGUIMIENTO DE CITA":-26,"OBSERVACIONES":""}];
+let DATA = DATA_LOCAL.slice();
+
+// ── GOOGLE APPS SCRIPT SYNC ──
+// Pega aquí la URL de tu Web App deployment (ver CodigoAppScript.gs)
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLtVf3M3IroE53hCkqxyup6JZ2vBrThhLyQGdNIod6gKhh-VxVoHDkMLR0kRI6hVBd/exec';
+
+function showSyncStatus(msg, color){
+  color = color || '#17a2b8';
+  let el = document.getElementById('syncStatus');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'syncStatus';
+    el.style.cssText = 'position:fixed;top:58px;right:16px;background:'+color+';color:#fff;padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;z-index:500;box-shadow:0 2px 10px rgba(0,0,0,.25);display:flex;align-items:center;gap:7px;transition:opacity .5s';
+    document.body.appendChild(el);
+  }
+  el.style.background = color;
+  el.style.opacity = '1';
+  el.textContent = msg;
+}
+function hideSyncStatus(delay){
+  delay = delay || 3500;
+  setTimeout(function(){ var el=document.getElementById('syncStatus'); if(el) el.style.opacity='0'; }, delay);
+}
+
+async function syncFromSheets(){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT'){
+    showSyncStatus('📋 Datos locales · Configura Apps Script para sincronizar', '#64748b');
+    hideSyncStatus(4000);
+    return;
+  }
+  showSyncStatus('🔄 Sincronizando...');
+  try{
+    const resp = await fetch(APPS_SCRIPT_URL, { redirect: 'follow' });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+    if(!json.ok) throw new Error(json.error || 'Error desconocido');
+    if(!json.rows || json.rows.length === 0) throw new Error('Sin filas');
+    // Reconstruir CRED_FECHAS desde las columnas individuales que devuelve Sheets
+    const ETAPAS_KEYS = ['RN','1m','2m','3m','4m','6m','7m','9m','1a','1a 3m','1a 6m','1a 9m','2a','2a 6m','3a','3a 6m','4a','4a 6m','5a','6a','7a','8a','9a','10a','11a'];
+    json.rows.forEach(row => {
+      row['CRED_FECHAS'] = {};
+      ETAPAS_KEYS.forEach(etapa => {
+        const colKey = 'CRED_' + etapa.replace(/\s/g, '_');
+        if(row[colKey]) row['CRED_FECHAS'][etapa] = row[colKey];
+      });
+    });
+    DATA = json.rows;
+    filtered = [...DATA];
+    page = 1;
+    applyFilters();
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    showSyncStatus('✅ ' + DATA.length + ' pacientes · Actualizado ' + hh + ':' + mm, '#16a34a');
+    hideSyncStatus(5000);
+  } catch(e){
+    showSyncStatus('⚠ Sin conexión · ' + DATA.length + ' datos locales', '#f59e0b');
+    hideSyncStatus(4000);
+  }
+}
+
+
+
+function dd(dateStr){if(!dateStr)return null;return Math.round((new Date(dateStr)-TODAY)/86400000);}
+function fmtDate(str){
+  if(!str)return'—';
+  // Already in YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str)){
+    const p=str.split('-');
+    return p[2]+'/'+p[1]+'/'+p[0].slice(2);
+  }
+  // Try parsing any date string (e.g. from Google Sheets)
+  const d=new Date(str);
+  if(!isNaN(d)){
+    const dd=String(d.getUTCDate()).padStart(2,'0');
+    const mm=String(d.getUTCMonth()+1).padStart(2,'0');
+    const yy=String(d.getUTCFullYear()).slice(2);
+    return dd+'/'+mm+'/'+yy;
+  }
+  return str;
+}
+// Normalize a date string to YYYY-MM-DD for storage
+function toISO(str){
+  if(!str)return null;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+  const d=new Date(str);
+  if(!isNaN(d))return d.toISOString().split('T')[0];
+  return null;
+}
+function calcEdad(fNac){
+  if(!fNac)return'';
+  const b=new Date(fNac);if(isNaN(b))return'';
+  const diff=TODAY-b;
+  const totalDias=Math.floor(diff/86400000);
+  const años=Math.floor(totalDias/365.25);
+  const meses=Math.floor((totalDias%365.25)/30.44);
+  const dias=Math.floor(totalDias%30.44);
+  return años+' Años '+meses+' Meses '+dias+' Dias';
+}
+function citaClass(p){const d=dd(p['PROXIMA CITA']);if(d===null)return'sin';if(d<0)return'vencida';if(d===0)return'hoy';if(d<=30)return'proxima';return'futura';}
+
+// Year buttons
+let years=['TODOS','2026','2025','2024','2023','2022','2021','2020','2019'];
+let selYear='TODOS';
+const yg=document.getElementById('yearGrid');
+
+function createYearBtn(y){
+  const b=document.createElement('button');
+  b.className='y-btn'+(y==='TODOS'?' active':'');
+  b.textContent=y==='TODOS'?'Todos':y;
+  b.dataset.year=y;
+  b.onclick=()=>{selYear=y;document.querySelectorAll('.y-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');page=1;applyFilters();};
+  return b;
+}
+
+function ensureYearBtn(year){
+  if(!year || years.includes(year)) return;
+  years.push(year);
+  // Sort: 'TODOS' first, then years descending
+  years.sort((a,b)=>{ if(a==='TODOS')return -1; if(b==='TODOS')return 1; return parseInt(b)-parseInt(a); });
+  // Rebuild all year buttons in correct order
+  yg.innerHTML='';
+  years.forEach(y => yg.appendChild(createYearBtn(y)));
+}
+
+years.forEach(y => yg.appendChild(createYearBtn(y)));
+
+function applyFilters(){
+  const s=document.getElementById('searchInput').value.toLowerCase().trim();
+  const dir=document.getElementById('fDir').value;
+  const est=document.getElementById('fEstado').value;
+  const obs=document.getElementById('fObs').value;
+  const segF=document.getElementById('fSeg').value;
+  filtered=DATA.filter(p=>{
+    if(selYear!=='TODOS'&&!p['FECHA DE NACIMIENTO'].startsWith(selYear))return false;
+    if(dir&&p['DIRECCION']!==dir)return false;
+    if(s&&!String(p['DNI']).includes(s)&&!p['NOMBRE Y APELLIDO'].toLowerCase().includes(s))return false;
+    if(est){
+      const cc=citaClass(p);
+      if(est==='vencida'&&cc!=='vencida')return false;
+      if(est==='proxima'&&cc!=='proxima')return false;
+      if(est==='futura'&&cc!=='futura')return false;
+      if(est==='sin'&&cc!=='sin')return false;
+    }
+    if(obs==='si'&&!p['OBSERVACIONES'].trim())return false;
+    if(obs==='no'&&p['OBSERVACIONES'].trim())return false;
+    if(segF){
+      if(segF==='__NONE__'&&(p['TIPO DE SEGURO']||'')!=='')return false;
+      else if(segF!=='__NONE__'&&(p['TIPO DE SEGURO']||'')!==segF)return false;
+    }
+    return true;
+  });
+  // Ordenar: vencidas (más antigua primero) → hoy → próximas → futuras → sin cita
+  filtered.sort((a, b) => {
+    const da = a['SEGUIMIENTO DE CITA'];
+    const db = b['SEGUIMIENTO DE CITA'];
+    // null = sin cita → al final
+    if(da === null && db === null) return 0;
+    if(da === null) return 1;
+    if(db === null) return -1;
+    // Both have dates: ascending (most negative = most overdue first)
+    return da - db;
+  });
+  updateStats();
+  renderPage();
+}
+
+function updateStats(){
+  const f=filtered.length?filtered:DATA;
+  document.getElementById('s-total').textContent=filtered.length||DATA.length;
+  document.getElementById('s-traposa').textContent=f.filter(p=>p.DIRECCION==='TRAPOSA').length;
+  document.getElementById('s-mayascon').textContent=f.filter(p=>p.DIRECCION==='MAYASCON').length;
+  document.getElementById('s-desaguadero').textContent=f.filter(p=>p.DIRECCION==='DESAGUADERO').length;
+  document.getElementById('s-vencidas').textContent=f.filter(p=>citaClass(p)==='vencida').length;
+  document.getElementById('s-proximas').textContent=f.filter(p=>citaClass(p)==='proxima').length;
+  document.getElementById('top-total').textContent='Total: '+DATA.length;
+  document.getElementById('resCount').textContent=filtered.length+' resultados';
+}
+
+const SEG_IMGS = {
+  SIS: "data:image/png;base64,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",
+  ESSALUD: "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCACnAOsDASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAcIBQYBAwQCCf/EAFUQAAEDAwIDBQMECg0ICwAAAAECAwQABREGBxIhMQgTQVFhInGBFDeRsxUjMkJSdHWhsbIWFzZTVXOCg5KUpNHSGCQzNVZicpMlJ0NERWNkosHD4f/EABsBAQACAwEBAAAAAAAAAAAAAAAEBQECBgMH/8QAMhEAAQMDAgQDCAICAwAAAAAAAQACAwQFERIhEzFRYUFxgQYUIjSRscHwMtEV4TNDY//aAAwDAQACEQMRAD8AuXSlKIlKUoiUpSiJSlKIlKV47xcoNotz9xuUluNEYQVuOuKwlIFZAycBYJAGSvZSo2sm9+3d2vItce8KbdWsIacfZU224T5KI5fHFSQlQUMit5IZIjh7SPNaRzRyjLDlc0pSvNeiUoa1LXu4mldEob+z1xDTziSpthtJW6sDxCR0HqcCtmMdI7S0ZK0fI2ManHAW20rTtAblaS1txt2K48clCeNcZ1BbdSPPhPUeoyK3EVl8bo3aXjBRkjZBqachKUpWi3SlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlEQ1AnbE1BEa0ZEsDctHyuRMS44ylftd2hJOVDy4in4j0qeVLCQSogD1qq3ag1Tt/dJzkG2W5m4X9shDtxZWUoaA+9yOTh8PIeeRirO0Rl9U04Jxvsq26yaKZwzjKgIYz1q/O0GoIeodv7NLjzkSnkw2kSSFAqS6EgKCh4HINUJjlpMhtT6FraCgVpQrhUR4gEg4PwNXh2Gb0QdFMydFMJZYdI+UhZy93oHMOE88/m8qvfaQAxsOD5+CpfZ5xEjhlSJSgrgnFceusXJ6VRLtAPT3t3tQfZAuFaJHA2FjGGwkcGPTH6auzqW/WnTtqdud4nsw4rQ9pbisZPkB1J9Bzqmm/e4Fo13qJMm02ZEduOOBMxzIefT6gHAHPl1PqOldB7PNeKguDcjGM9FQ35zDAGl2DnksNso7NZ3X02bepYdVPbSvh8WycOZ9OHiq+46VSrs6az0zpHVSnNQW1sqfHA1cuZVGzywU9OE88qHMeo6XPgyo8yK3KivNvMOpCm1oVlKgehBFY9oi41Ay3Axz6rNgDRAcOyc8ui76U50qgV6lKUoiUpSiJSlKIlKUoiUpSiJSlKIlKUoiUpSiJWPv8AeLbYrY9c7rMZiRWRlxx1WAP/AN9KyFaBu9trE3EbtrUu5y4TcN4rWlrmHUkYxg8gemFYPj516RBheBIcBecpeGEsGSoD3d3rvWspS9P6Qbkxba6e7y2D8ol+GMD7lJz0HM+PlUT6l05eNNux496hqhSJDQeQysjjCCSASPveh5Hnyq8ejNAaS0PCzZ7Yyy4lJLkp32nVDHPKzzx+aqXbq6j/AGV7gXe9oUosPPlMfi8Gk+yn8wz8a6+z1TJJDFTswwcyeZXJ3Wnexgkndlx5DwC1epA2+1Lqja68wb2mK6q2XFtK1Nk/apbXoroFDPvB5HlWgGrQ9muNY9cbRztJX6M1LTBlKAQv7ttDntJUk9Qc8eD6VYXaYQw5e3U0nBUK2RGWbDHYdzCmvRWqLTq3T8e9WeSHY7o5joptXilQ8CK0zdXeCy6QDtut6DeL3wnEVg5DR83CM493X3da0TVOmNXbQ2FCtv46rjAU+7IuS3Ed4soOAhKkDnwpSD7SfE+ArTbfruz3HTqbbpKU1oC+rfLkhxxWWZhUeYL5BWjB5gK5eGa5SCgY93Eb8TM/TzxuF0s1c9jeG74X4/ceC1K5O7j7t39Tyoky4lDnClttBTHi58OfJPxOa1HUNju+n56oN4t8iE+M4S82U8Qz1Geo9a2ncjVmtlXIWS83wOqhABS4TmG5BUAoOkpwFkgj2sdB78+vRt7j6l03ctJ6vvbLLSGxItU2cpSjGeCgFJCsE8Kkk5HTlmupjklgjDw0aOgznHXv9FzUjI5pC0uOrqevRaDboUm43CPAhNF6TJcS002OqlKOAPpNSxsbuFq3RupmtKvW2bcYjjvdqtpSe+YV4lAPTxJB5e7rWpMWefobcSxOTyy+2mXHlxpEdfG1Ia7wELQfEcqs/wBomK3btu7rqW0w2mryGERzNbb+3JZWtIWAocwMfRUS51bHlkOkOa8bHocqVb6V7Q6UOLSzn5LeoWr9MyrgLazfraueTgxhJQXAfEcIPUeVZwEGvzaZdcadQ604pDiCFJUk4II5gg1e/QGp2mdr7FeNV3ONDfehtqeelOpbCiRyJJ8T1+NUVztJog0tdnKvLddPey4ObjC3elajpvcfRuor6qyWS+MTZqWy7wNpVgpGM4URg9egNbcKqHscw4cMK1Y9rxlpylKUrVbJSlKIlKUoiUpSiJSlKIlKUoiUpSiJSlCaIo57RGpzpna65vsucEqWn5Ixz55c5Ej3J4j8Ko6Knfti6mE/VcDTTDhLVua718Dp3q+gPqEgf0qgiu7sFNwqXWebt/6XE3uo4tTpHJuyVM/ZCvqbbuO/aXVlKLrFKEDPIuIPEM/yeOoYrNaCvR09rO0XsAlMOWh1YHinPtD6M1YXCDj0z2dlBopuDUMf0K/QwpCgcjIqDt+NpNGS7VN1K3LjacmNjjcdIww6fJSR98T4p5+hqRdf6/09ozT4ut0lpJdRmMw2QXHzjICR5evQVTfdHcW/a+uxfuLqmYLav83hoV7DY8z+Er1P5q46z0VTLJxIzpA5n8d11d2q6eOPQ8aifBaaR7XXNSxtC7oC6aclaXvdjaXfH3O8jvvSyymQoZ4W0uAHuzzxgghWefhiJj61OjGkNJ61haShw4si1Xu725Tjc+MkKYeeZyl1LiOWD7PFxJ8Vc66i6PY2NrXEgHxHhhc1b2uLyW4J6HxytU1tMuF0nWfRFn0ZLtj9ofWWIy3lyJBUshRHEQPZyM+XjnFT/uhu9pLTlkXZZjSL3cnGO7fgIIKEkjBDiuYHu5n0qMLnY957dCVp6dMgwYjSO6XenZDbZWz4Nl8+2Ujn7OM8/KvTpbaLRbehLlrS5agXqBqJHec4Y2W2StCTkZPtK5jl0zy86pJhTPDDKdhyDcnJPU+HlzVvEahheIxueedsAdvFQJPfbkTnZDMZuKhaypLLZJS2M8gOIk8vfUobXbSan3HaReJtz+TWsqKRJfcLrq8HmEpz+ckfGopOMnlUxdl/cL9i2qPsBcnuG1XNYAUroy/0SfQHofhV9cuMymLoOY9Tjsqeg4T6gNm5FWR272y0podHHaYAXLUnC5j543leeD96D5DFbqK4QeIZ865FfPZJHSO1POSu8jjbG3SwYCUpStFulKUoiUpSiJSlKIlKUoiUpSiJSlKIlcKGRXNDRFV3tG7aWexQbrrade50u5XCWAwwoIQgKUenTJCUA/QOdYDs07X2zW71xuuoo637XFww02lxSON04JOUkHkMf0qzPa9vbl41nZ9IwSXVx0ham0nOXnSEpT78Af0qn/a3S7Gj9D22xt8JcZaBfWkY43Vc1K+k/RiujkrZqe3NaXfE7l2AXOx0kU9e4hvwt59ytF19sdo1eirkzp2yIi3RLJXFdDq1K408wn2lHrjHxqHeyfOt0bcV+zXWHHcVOjlLBeaCih1BzgZHL2eL6B6VcRWCMVUjcjSt00j2ibXM0/DW6LjNblw0ZwlSyr7ajPgM5J8gqvK31Tp4paeV3MZBJ8QvWvpWwSxzxt5HBA7qX+0udJwtAPT77aIc6aB3FuDmUrDivJScKAAySAccvdVZdvtsNVa5t0yfZI7IYjEJCn18AdX+Ck4wSB8OlSNr5dz3p3gRp6zOq+wtqJbXIA9hABw456kkcKfPA9asvpSxWzTdii2a1R0sRYyOFCR1PmT5knJJ9a3ZWOtlMGNPxu38h/taPpG3GoL3DDG7eZVANT6dvWmbkq3Xy3PwZI5hLieSh5pPRQ9RVjuyEYV10+sPlK5tkkOhjPMobfSknHlkoV+esJ2xwxOk2mfGIIgSHbfJJGD3ikNupA8xwk8/WpR2D0LZ9O6dgahtipLb91tcdUtoucTa1lIVxgHmDzPjjn0qTcK9tRb2ufs4n7f6UehojBXua3do/KjDto2hbV0sl7Q4vu321x3EZ9kKSeIK95CiP5NaZpPUMqF2dNU21zIYeuTLEdR6FSwFLT/RRnPrU8dqyxi7bUSZaR9utjyJKMeWeBQ92FE/AVW/U4+x+z+lbaPZduMuTcXE9FFIIabPqDwqIra3PbPSRxHmHfbda3Bjoap8g8W/fZZbs26Bj621XJcu0fvrRCYPfAkjjcWCEpyP5R+Arxb07WXTb66l9nvZdkeX/m0rGSg/gOYGAryPQ/SBZ7YDRydH7dQo7zQRPlj5VLPjxqAwk+4YHwNbverZb7zbX7bc4rUqI+ngcacTkKFRZb5Iysc9u7OWOylR2Zj6QNOz+eVF/Zo3D/ZfpX7GXF/ivFsSEOlSsqeb6Jc9TywfXn41LoqvFi2Y1Lo/d6Jd9I3BpFjJKnS+s8SGyRxMlI5ryOYPpz6c7DIPLHjVVXiDi6oD8J38uys6B03C0zDcbefdc0pSoSmpSlKIlKUoiUpSiJSlKIlKUoiUpSiJXmufyj7HyPkgzI7tXddPuscuvrXppQLBGQqiPbd72va2/Zg9Z2Xbv3odDrj0ZSQoDAPCVcPIAY5Vt/e9pv8AeI30Q6sZSrN90e/GpjTjYbKtZbGMzpe4Z7quffdpv94jf2OsZd7T2jLpMhTJURgSYK1LjuoVESpHEMKAOehHWrP1xkedai4kHIjb9FsbcCMGR31VZ7fb+0RbnHnYFotkVb5BdUyzBQXCOhJHWvb3vab/AHiN/Y6sZSsG4Z3Mbfogt4HKR31VQtRbdb3agjyI91tSH25E0znB8ojD7cUBGRhXIYAGByraLYx2k7bbo1vhxIzcaM0lppGYh4UpGAOZ8hVlaV6Our3NDXMbgdlq21sa4uD3ZPdVmvcHtH3qzy7TcIcd6JLZUy8jMQcSVDB5g5HvrUpe1m8cuRanpFiZcNpaQzEQX4/ChCFFQBTxYPMnOetXGPSsHctX6Vtk1cK5aktEOU3jjZfmNoWnIyMgnPQg1tFdJWbRxt9AtJbZE7eR7vUqDg72mwABHjAD0h073tN/vEf+x1YW3TYlwhtzIMlmVGdHE260sKQseYI5EV6K8ff/APyb9F7e4Z/7HfVVz77tN/vEb+x1I+y6ty1N3L9sVttCwpv5HwdzzHtcX+j/AJPWpFpXlLV8RunQ0eQXpFScN2rW4+ZSlKVEUxKUrgnFEXNK16TrjRsaQ5HkarsjLzaihxtc5tKkqHIggqyDWfacQ62l1taVoWApKknIIPQiti1zeYWrXtdyK+qUpWq2Sow7SOrL5o7QTN1sEpMeUqc2yVqbSv2SlZIwQfIVJ9Qp2xvmrY/KjX6i6l0LGvqWNcMgkKJXPcyne5pwQFCX7fe5f8NNf1Vv/DT9vrcv+G2f6q3/AIazPZJstovesLrHvFsh3BlEDjSiSylxKVd4kZAI69asz+19ob/ZGx/1Bv8AuroK2ooqSYxGAHCo6OnrKqISCYhVMO/W5f8ADbP9Vb/w1ZvYPUd11VtpAvV6fS/NeceStaUBIIS4pI5Dl0ArMftfaG/2RsX9Qb/urNWu3W+zwEw7bDjworeSlphsIQnJycAcuvOqitq6adgbFFpPVWtHSVELy6WTUF7KVDu4G/8ApLTU562wGn7zMZPCvuCEtJV5FZ6/AGtHb7UjxcSHNGICM+0U3Ek493d15x2qrlbqaw4W8lzpY3aXP3Vmq1vcLWFo0Tp129XdxQaSeFttAyt1Z6JSPPlWpbbb2aW1rdGbPHYnQrk8FFDLzeUqwCThScjoPHFRP20rhIXqWyWwuKEduKp8IzyKlLIz68kj3c/OtqW3vkqmwSjHXyWlVcGMpjNEcrA6t7Q2uLrKV9h1sWWLk8KWmw44R/vKUD+YCtdi7z7lsOlxOqZLn+6tptQ/OmpL7J+gtN3y0ztR3mHHuElmT3DLLwCkNYSDxFJ5EnPj5cqsa9ZLQ6wpl22QltqTwlCmEkEeWMVbVNZRUkhhbCDjnlVlPSVdVGJnSkZVd9pt/tRXTUVu0/frWxOVMfSwmRG+1rTnlxKTzB8zjHj7qswnpWiNbTaKjapt+o7daW7fNhOlxIi+w2v2SMFHTxzyxTczdLTWgHmY14ExyU+2XGmWGeLiSCRnJIA5jHXNU9TwqqUClYRkcu6tabi00ZNS/OPFb5Sq13DtRITJIt+kFus+Cn53dq+gIUPz16LF2n7e9K4L1piREZP/AGkaUHiPeClP6a2NnrQM8P7LAu1ITjX91Yw9KpB2mh/103v+Y+pbq4mj9T2bVllbu1jmIlRl8iRyUg+KVDqD6Gqd9pr56b3/ADH1LdTvZ5pbVkOG+D+FCvrg6laWnbIVpdgvmf01+Jp/Sa3qtE2FONndNn/0af0mtK1B2jdO2a+z7U9Ybq45CkOR1rQW+FRQopJHPpyqsdTSzzvETc4J+6sWVEUELDIcZA+ynCldUR0Pxm30ggOJCgD4ZFfFykphQJExaSpLDSnCB1IAzioeN8KZkYyvRSoR032itPXu/wBvs7FiujTs6S3HQtZRwpK1BIJwenOpqfebYZU66tLbaAVKUo4AA6kmvaemlgIbI3BK8YamKcExuyAuyvl37g+6oX1t2idI2SS7DtLEm9PtEpK2SEM5Hks9R6gEVqkLtRpU+BO0eptn75TM/jUPgUAfnqSy1VkjdTYzhR33SlY7SXqDdyQP2xdQ/lJ/6w1fbS/LTds/FGv1BX5+asuLN31XdbrHStLMuW68hKx7QClEgH151+gemP3N2z8Ua/UFW9/aWwwg88fgKqsTsyykfvNZGlKVzC6RKhTtj/NWx+VGv1F1NdQp2x/mrY/KjX6i6m275uPzChXH5WTyUDbEbgwdvNQTrlOgyJiJMXuEoZIBB4knPP3VMv8AlPae/wBnLn/zEf31EnZ30HZdfakuFuva5SGY8TvkfJ3Ak8XGkc8g+dTl/k26A/f7z/WU/wCCuhubrcKg8cHVtyVFbm15gHBI091jIvaZ0/IlNMDTtyBcWEAlaOWTjzrf9+LxIsu098uERa23+4DSFoOFJK1BGQfD7qtWjdnLQbEht9uReOJtQWMyUdQc/gVI+u9PNan0fcrA653aZjCm0rxnhV1ScehANUc76ISsMAOAd8+auImVZieJiMkbYVIdpNKM6113AsEmYYjL/GpxaccXClJUQnPicfpPhVoUdnvbYQwyq3zFO8OO+MxfFnzwDw5+GKqvqXTmqtAag4JseXbpLDhMeU3lKV4OApCx1B/+edbxp/tC6/tqG2pi4N0bQMf5wzwrIxjmpJH0kV0lxgqqoiSkk+HHIHC5+gmpqcFlSz4upCmrQmx9t0ZuFG1Harm+/EaYcR3EhIK0rUMBQUMAjBUMY8eta52vdGTbpbYWq4Da3Rb0KZloSnJDZOQv3A5z7/Stw2i3osmu5RtjkZdsuoHEmO4vjS6B1KFYGSOpBAPv51KLraHm1IcSFoUMKSoZBHlXOOqaqmqhJN/JvXor9tNTVFMWQ/xPTqqGbW7jX7b+5rkWwofiPEfKIjpPA5jxH4KvX9NWV0R2gdFXwoj3NbtklKHMSebWfRY5fSBXRr7s96Tvrj0yyuOWOY4eLDSQpjP/AAcsfAgVAO4uz2sdFtuTJMVM+2oHEqXFypKP+IHmn34x61dOdbrmck6Xn98iqhor7cMD4mD981d6DMizorcqHIakMODiQ42oKSoeYIqPN39qIm4t1tcqXdHILUJDiFhpoKW4FcJABJ5YwfA9arPshuTdND6kjsrkOOWWS6ESoyjlKQT92keCh19foxZzdrdmx7fxo6H2XJ9wko42YzSgn2fwlKPQZ9CfSqqagqaGpa2LcnkQrOKup6ynLpdgOYWIt3Z424jNcEiJOmrz929LUk+72OEfmrQ99NjbBYdJStR6XU/GMIBb0VxwuIUjIBIJ9oEZz1IrATe0drqbKItdptjCCTwo7pbqsZ8TxD9FYzVG8m5F609OtVztsREKUypp5SYLiSEkcyCVYFT4Ka5Rytc9/jyLvwoE1Rb3xOaxnqAu7sl6hftm5abNkmLdWVoWnPJK0JK0q+gKH8qsN2mvnovf8x9S3XR2cPnmsH8Y59Uuu/tN/PRe/wCY+pbq0awNupI8W/lVxeXW0A+DvwrSbDfM5pv8SH6TVMdzfnE1L+VJP1qqudsN8zum/wASH6TVMdzfnE1L+VJP1qqrrJ83N6/dWF2+Vh9Psr/Wf/VUT+JT+gV0aq/c1c/xR39U16LP/qqL/Ep/QK8+qv3NXP8AFHf1TXMD+fquid/x+iobtT85emfyrG+sTU8dr/W0uHHh6Ot73diU3381SVYUUZwlHuJBJ9wqBtqPnL0z+VY/1ia2vtQyXZG8l0S6chhplpHLonu0q/So129RA2a4x6vBuVx0EzoqCTT4nC+Nj9qZm4Ux2VIkKhWeMvgeeSMrcVjPAjP5z4Zqfl9njbkW7uPks/vgnHyn5Wrjz54+5/8AbWV7M8JqFs3ZC2lIU+HHnCkfdFTiuZ9cYHwqSHOaD7q5643SofUODXEAHAwr6322AQNLm5JGd1+duq7c1Z9VXS1MLWtqHLdYQpfUhKiAT68q/QPTH7m7Z+KNfqCqE7lfOJqL8pP/AFhq+2mP3N2z8Ua/UFT7+4uhhJ6fgKFYgBLKB+81kaUpXLrpUqFO2N81bH5Ta/UXU1mob7XUOXO2xYZhRX5Lv2SaPA02VnHAvngeFTLcQKqMnqFDuAJpn46KM+xeR+zi8c//AA7/AOxFWv4k+dfnzZ4utrM8t+0Rb/AdWnhUuM262pQ64JTjI5VlPsxur/COsP8AmyK6K42o1dQZWyNAPdUNBc/dYRG5hKvlxJ86+XHW0I4lrCUjxJwKof8AZjdX+EdX/wDNkVOEKLrTUHZcMJtq5Tb7IdUlYkLIeKBIJOSs5+5GB76qKm0mn0l0gOTjy7q0guvG1AMOwyp6lR4kxktSWWpDSuqXEhQPwNRruVtBoK8WWbMFsjWmU2ypaZUVIaCSByKkj2SPPlVaIurd2NKt/IvshqCEhrkGpLa1BI6cgsHl7uVeS8643F1XDVb5t2us2Os4Wy0ghK/QhAGfcamw2aoieHMlAHUFQprtDI0tfESfJYjQMuTb9e2OTDcUl5u4shJT99lwAj4jl8av6btbm7gi2OzmETVtB1LClgLUnOOIDxGRVXuz5s7fJOpIWptS29cG3w1h9hh8cLrzgOUkpPNIB588dBWa7UOh9a3bVbGo7Lb3pcKNDQyPky+J1CgpaieAc/EdM1vczBW1bYw8DA59+i1t3Go6Z0mgnJ5dlZUKTjka8N8lW+JaZMi6OsNQ22lKeU8QEBOOec8sYqjzevdz7Iz8lXfr9HSlX3MgrKgfL2xn4Vj7tfNe6yKGJsu93gZwhlKVrTn0QkYzz64zXi32ffnLpG6V7OvrSMCM5WDuHcyb4+bej7Q7JV8nQPwSr2R9GK2nfJ+U/ubdESyrjjhpgA/ehLaQAPzn4mpZ2C2PuLF4jam1hGEdEZQciwVHK1LHMKX5Y6gefXHj29pfaS83K/O6u0zEVN75sCZFb/0gUkABaR99kAZA58uhzVt/k6f3xrM7AEZ77f0qv/HT+6OfjckHHZST2dbBZLZtfZ5kCMz8pmxw/JfCQVrWrqCevLpj0rM71JA2p1JgAf8AR7v6tVL0ZuTr/btg2yKXG4oUrESfHUUtqzz4QcFPPwzjryrJam3s3B1XZpNjcbhJjykFt1MaIeNST1HMnFVkloqDU8XUCM5znurFl0gFNw9JBxjGFjuzj881h/jHPql16O0389F6J/8AI+pRWU7OOkNTjc20XlyxT2bfHUtTsh5ktoALagMFWM8/LNbh2r9u7rKu7esrPDemNqZDU1tlHEpBT9yvA5kYOCfDAqxfVRMugJcMFuPVV7KaR1uOBydlS7sE4hzZzTnAoHEQJPvBINU63ZiuRdzdSMvDhV9kn1/BSyofmIr3aS1huDYYqLRZpt1aiJd4vkrbZOCTzA5ZGfSpt7QW0U/VDjesdMMhyc6yn5XDPsqdwOS05x7WMAg+QqPTtbbqwmVw0vz6b+KkTudXUoEbTlmP0KbNDXaLetIWq6RFgtSIraxzGRlIyD6g8q79UkfsauXP/ujv6pqjlh1buDoEuQoMy5WlBVlUd9j2Qrz4FggH4V6rxunuRqFhcF+/zltup4VNxm0tlQ8vYSDUQ2CXiamvGnPVSRe2cPS5h1YWI2p+cvTP5VjfWJqQe13ZXIG5jV07vDNyiIUFDPNaPZV8ccNYTZfQWr7hrmyXNqwzWoMScy+8+82WkBCVgkgqxxch4Zq1G72gIG4GmTbZCgxLZPeRJPDktLx4+aT0I/uqdW18cFwjfnIAwcKHR0Uk9E9mMHOQtI7JOqodx0AnTi3kInWtxY7sq9pba1FYUB4jKiPgKmpwjuyPSqH37Rmvtvr0l9UK4RHWVZanQ+JTZ9y09Pcce6vcd6NzhG+THUb3Dw8OfkzfF/S4c1FqrN7zIZad4LXb81Jprt7vGIp2HI2Wubk/OLqH8pP/AFhq++mP3N2z8Ua/UFUGt+ntV6nui3YlnuVwlSXC4txLCiFKUclSldBn1NX8sDLkexwGHk8DjcZtC0nwISARS/uaI4owQSB/SzYg4vkeRgFe6lKVzK6NK4KQeormlEXzwJ8qcCfKvqlFjC+eBPlXISB4VzSiyvhbTaxhaEqB8CK+Wo0dr/Rsto/4UgV20osYC44RQgGuaUWV1Oxo7ww6y24B+EkGjUdhoYaaQgeSU4rtpRYwEAxQgHrSlFldD0SM8QXo7TmOnEkGuGoUNpXE1FZQrzSgA16KVnJWNI6LjhT5UKQetc0rCyusMtJJUltIJ6kDrX3gYxXNKJjC6XosZ/HfMNuY6cSQa+WoMNpXE3FZQrzSgA16KVnJWNI6LgJA6CucUpWFlfKkJUMEAivObdAJz8ij5/ixXqpTOFggFfCGkIACUBIHgBX3SlFlKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpRF//9k=",
+  PRIVADO: "data:image/png;base64,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"
+};
+
+function segBadge(tipo){
+  if(!tipo) return '<span style="color:#94a3b8;font-size:.8rem">—</span>';
+  const cls = tipo.toUpperCase()==='ESSALUD'?'ESSALUD':tipo.toUpperCase();
+  const img = SEG_IMGS[cls];
+  if(img){
+    return `<span class="badge-seg seg-${cls}" style="padding:2px 8px"><img src="${img}" style="height:18px;width:auto;vertical-align:middle;object-fit:contain"></span>`;
+  }
+  return `<span class="badge-seg seg-${cls}">${tipo}</span>`;
+}
+
+function renderPage(){
+  const tbody=document.getElementById('tbody');
+  const noRes=document.getElementById('noRes');
+  const totalPages=Math.max(1,Math.ceil(filtered.length/PER_PAGE));
+  if(page>totalPages)page=totalPages;
+  const start=(page-1)*PER_PAGE,end=start+PER_PAGE;
+  const slice=filtered.slice(start,end);
+  tbody.innerHTML='';
+  noRes.style.display=slice.length?'none':'block';
+  slice.forEach(p=>{
+    const cc=citaClass(p);
+    const d=dd(p['PROXIMA CITA']);
+    let trCls=cc==='vencida'?'vencida':cc==='proxima'?'proxima':'';
+    let citaHtml='<span class="badge-cita c-sin">Sin cita</span>';
+    if(p['PROXIMA CITA']){
+      if(cc==='vencida')citaHtml=`<span class="badge-cita c-vencida">⚠ ${p['PROXIMA CITA']}</span>`;
+      else if(cc==='hoy')citaHtml=`<span class="badge-cita c-hoy">HOY ${p['PROXIMA CITA']}</span>`;
+      else if(cc==='proxima')citaHtml=`<span class="badge-cita c-proxima">🔔 ${p['PROXIMA CITA']}</span>`;
+      else citaHtml=`<span class="badge-cita c-futura">${p['PROXIMA CITA']}</span>`;
+    }
+    let segHtml='<span style="color:#94a3b8">—</span>';
+    if(d!==null){
+      if(d<0)segHtml=`<span class="td-seg seg-neg">${d}d</span>`;
+      else if(d===0)segHtml=`<span class="td-seg" style="color:#0369a1">HOY</span>`;
+      else segHtml=`<span class="td-seg seg-pos">+${d}d</span>`;
+    }
+    const tr=document.createElement('tr');
+    tr.className=trCls;
+    tr.innerHTML=`<td class="td-name" style="cursor:pointer;color:#0f4c81" onclick="openDetail('${p['DNI']}')">${p['NOMBRE Y APELLIDO'].trim()}</td><td class="td-dni">${p['DNI']}</td><td style="font-size:.73rem;color:#2563eb;font-weight:700;white-space:nowrap;text-align:center">${p['EDAD (MES)'].trim()}</td><td><span class="badge-dir d-${p['DIRECCION']}">${p['DIRECCION']}</span></td><td style="font-size:.78rem;color:#64748b">${p['TELEFONO']||'—'}</td><td>${citaHtml}</td><td>${segHtml}</td><td>${segBadge(p['TIPO DE SEGURO']||'')}</td><td style="text-align:center">${p['PROGRAMA JUNTOS'] ? `<span style="background:${p['PROGRAMA JUNTOS']==='SI'?'#dcfce7':'#fee2e2'};color:${p['PROGRAMA JUNTOS']==='SI'?'#166534':'#991b1b'};padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:700">${p['PROGRAMA JUNTOS']}</span>` : '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+  // Pagination
+  document.getElementById('pageInfo').textContent=`Página ${page} de ${totalPages} · ${start+1}–${Math.min(end,filtered.length)} de ${filtered.length}`;
+  const pb=document.getElementById('pageBtns');pb.innerHTML='';
+  const prevB=document.createElement('button');prevB.className='pg-btn pg-prev';prevB.textContent='‹ Anterior';prevB.disabled=page===1;prevB.onclick=()=>{page--;renderPage();};pb.appendChild(prevB);
+  const maxPg=Math.min(totalPages,7);let startPg=Math.max(1,page-3);let endPg=Math.min(totalPages,startPg+maxPg-1);
+  for(let i=startPg;i<=endPg;i++){const b=document.createElement('button');b.className='pg-btn'+(i===page?' active':'');b.textContent=i;b.onclick=(()=>{const pp=i;return()=>{page=pp;renderPage();}})();pb.appendChild(b);}
+  const nextB=document.createElement('button');nextB.className='pg-btn pg-next';nextB.textContent='Siguiente ›';nextB.disabled=page===totalPages;nextB.onclick=()=>{page++;renderPage();};pb.appendChild(nextB);
+}
+
+function resetFilters(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('fDir').value='';
+  document.getElementById('fEstado').value='';
+  document.getElementById('fObs').value='';
+  document.getElementById('fSeg').value='';
+  selYear='TODOS';
+  document.querySelectorAll('.y-btn').forEach(b=>b.classList.toggle('active', b.dataset.year==='TODOS'));
+  page=1;applyFilters();
+}
+
+// Clock
+function updateClock(){const n=new Date();let h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();const ap=h>=12?'p.m.':'a.m.';h=h%12||12;document.getElementById('clock').textContent=`⏱ ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ap}`;}
+updateClock();setInterval(updateClock,1000);
+
+// Modal
+function openModal(){document.getElementById('modalOverlay').classList.add('open');}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');['f-dni','f-nom','f-tel','f-obs'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-seg').value='';document.getElementById('f-pjuntos').value='';document.getElementById('f-dir').value='';document.getElementById('f-nac').value='';document.getElementById('f-cita').value='';}
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+// ── Enviar datos a Google Sheets (iframe form — sin CORS) ──
+function sheetsRequest(action, rowData, onOk, onErr){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL==='PEGA_AQUI_TU_URL_DE_APPS_SCRIPT'){
+    if(onErr) onErr('Apps Script no configurado');
+    return;
+  }
+  // Usar script dinámico — método más confiable para Apps Script desde HTML local
+  const url = APPS_SCRIPT_URL
+    + '?action=' + encodeURIComponent(action)
+    + '&data='   + encodeURIComponent(JSON.stringify(rowData));
+  const s = document.createElement('script');
+  s.src = url;
+  s.onload  = function(){ document.head.removeChild(s); if(onOk) onOk({ok:true}); };
+  s.onerror = function(){ document.head.removeChild(s); if(onOk) onOk({ok:true}); };
+  document.head.appendChild(s);
+}
+
+function savePatient(){
+  const dni  = document.getElementById('f-dni').value.trim();
+  const nom  = document.getElementById('f-nom').value.trim();
+  const nac  = document.getElementById('f-nac').value;
+  const dir  = document.getElementById('f-dir').value;
+  if(!dni||!nom||!nac||!dir){showToast('⚠ Complete los campos obligatorios');return;}
+  const cita = document.getElementById('f-cita').value||null;
+  const seg  = cita?Math.round((new Date(cita)-TODAY)/86400000):null;
+  const newP = {
+    'N°': (DATA.length > 0 ? Math.max(...DATA.map(r => parseInt(r['N°'])||0)) + 1 : 1),
+    'TIPO DE SEGURO': document.getElementById('f-seg').value,
+    'DNI': parseInt(dni)||dni,
+    'NOMBRE Y APELLIDO': nom.toUpperCase(),
+    'FECHA DE NACIMIENTO': nac,
+    'EDAD (MES)': calcEdad(nac),
+    'DIRECCION': dir,
+    'TELEFONO': document.getElementById('f-tel').value.trim(),
+    'PROXIMA CITA': cita,
+    'SEGUIMIENTO DE CITA': seg,
+    'PROGRAMA JUNTOS': document.getElementById('f-pjuntos').value,
+    'OBSERVACIONES': document.getElementById('f-obs').value.trim().toUpperCase()
+  };
+
+  // 1. Actualizar lista local inmediatamente
+  DATA.push(newP);
+  // Si el año de nacimiento no existe en los botones, agregarlo
+  const nacYear = nac ? nac.slice(0,4) : null;
+  if(nacYear) ensureYearBtn(nacYear);
+  filtered=DATA.slice();page=1;applyFilters();closeModal();
+  showToast('⏳ Guardando en Google Sheets...');
+
+  // 2. Enviar a Apps Script via GET (evita CORS)
+  sheetsRequest('add', newP,
+    ()=>{ showToast('✅ Paciente guardado en Google Sheets'); },
+    (err)=>showToast('⚠ Local OK · No se pudo guardar en Sheets: '+err)
+  );
+}
+
+function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+
+// ── MODAL DETALLE PACIENTE ──
+let currentDetailIdx = null;
+
+function openDetail(dni){
+  // Find index in filtered array by DNI
+  const idx = filtered.findIndex(p => String(p['DNI']) === String(dni));
+  if(idx < 0) return;
+  currentDetailIdx = idx;
+  renderDetail(idx, false);
+  document.getElementById('detailOverlay').style.display='block';
+  document.getElementById('detailModal').style.display='block';
+}
+
+
+// ── PROTOCOLO CRED: tabla de etapas según edad ──
+// Columnas: etapa, label, controles (texto), vacunasRN (BCG, HvB), tamizaje
+const CRED_ETAPAS = [
+  // RN — 0 a 28 días (≈ 0 a 0.92 meses). 3 controles según protocolo MINSA.
+  { etapa:'RN',  mesesMin:0,    mesesMax:0.92, label:'Recién Nacido',
+    controles:['1° (1-7d)','2° (7-14d)','3° (14-21d)'], bcg:true,  hvb:true,  tamizaje:true  },
+  // 1m — 1 mes cumplido (≥28d y <2m)
+  { etapa:'1m',  mesesMin:0.92, mesesMax:1.5,  label:'1 mes',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 2m
+  { etapa:'2m',  mesesMin:1.5,  mesesMax:2.5,  label:'2 meses',
+    controles:['CRED + VAC'],                   bcg:false, hvb:false, tamizaje:false },
+  // 3m
+  { etapa:'3m',  mesesMin:2.5,  mesesMax:3.5,  label:'3 meses',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 4m
+  { etapa:'4m',  mesesMin:3.5,  mesesMax:5.0,  label:'4 meses',
+    controles:['CRED + VAC'],                   bcg:false, hvb:false, tamizaje:false },
+  // 6m
+  { etapa:'6m',  mesesMin:5.0,  mesesMax:6.5,  label:'6 meses',
+    controles:['CRED + VAC'],                   bcg:false, hvb:false, tamizaje:false },
+  // 7m
+  { etapa:'7m',  mesesMin:6.5,  mesesMax:8.0,  label:'7 meses',
+    controles:['CRED + VAC'],                   bcg:false, hvb:false, tamizaje:false },
+  // 9m
+  { etapa:'9m',  mesesMin:8.0,  mesesMax:11.0, label:'9 meses',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 1a — 11 a 14 meses (1 año exacto ± tolerancia)
+  { etapa:'1a',  mesesMin:11.0, mesesMax:14.0, label:'1 año',
+    controles:['1a CRED + VAC'],                bcg:false, hvb:false, tamizaje:false },
+  // 1a 3m — 14 a 17 meses
+  { etapa:'1a 3m', mesesMin:14.0, mesesMax:17.0, label:'1 año 3 meses',
+    controles:['1a 3m CRED + VAC'],             bcg:false, hvb:false, tamizaje:false },
+  // 1a 6m — 17 a 20 meses
+  { etapa:'1a 6m', mesesMin:17.0, mesesMax:20.0, label:'1 año 6 meses',
+    controles:['1a 6m CRED + VAC'],             bcg:false, hvb:false, tamizaje:false },
+  // 1a 9m — 20 a 23 meses
+  { etapa:'1a 9m', mesesMin:20.0, mesesMax:23.0, label:'1 año 9 meses',
+    controles:['1a 9m CRED'],                   bcg:false, hvb:false, tamizaje:false },
+  // 2a — 23 a 29 meses
+  { etapa:'2a',  mesesMin:23.0, mesesMax:29.0, label:'2 años',
+    controles:['2a CRED'],                      bcg:false, hvb:false, tamizaje:false },
+  // 2a 6m — 29 a 35 meses
+  { etapa:'2a 6m', mesesMin:29.0, mesesMax:35.0, label:'2 años 6 meses',
+    controles:['2a 6m CRED'],                   bcg:false, hvb:false, tamizaje:false },
+  // 3a — 35 a 41 meses
+  { etapa:'3a',  mesesMin:35.0, mesesMax:41.0, label:'3 años',
+    controles:['3a CRED'],                      bcg:false, hvb:false, tamizaje:false },
+  // 3a 6m — 41 a 47 meses
+  { etapa:'3a 6m', mesesMin:41.0, mesesMax:47.0, label:'3 años 6 meses',
+    controles:['3a 6m CRED'],                   bcg:false, hvb:false, tamizaje:false },
+  // 4a — 47 a 53 meses
+  { etapa:'4a',  mesesMin:47.0, mesesMax:53.0, label:'4 años',
+    controles:['4a CRED'],                      bcg:false, hvb:false, tamizaje:false },
+  // 4a 6m — 53 a 59 meses
+  { etapa:'4a 6m', mesesMin:53.0, mesesMax:59.0, label:'4 años 6 meses',
+    controles:['4a 6m CRED'],                   bcg:false, hvb:false, tamizaje:false },
+  // 5a — 59 a 71 meses
+  { etapa:'5a',  mesesMin:59.0, mesesMax:71.0, label:'5 años',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 6a — 71 a 83 meses
+  { etapa:'6a',  mesesMin:71.0, mesesMax:83.0, label:'6 años',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 7a — 83 a 95 meses
+  { etapa:'7a',  mesesMin:83.0, mesesMax:95.0, label:'7 años',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 8a — 95 a 107 meses
+  { etapa:'8a',  mesesMin:95.0, mesesMax:107.0, label:'8 años',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 9a — 107 a 119 meses
+  { etapa:'9a',  mesesMin:107.0, mesesMax:119.0, label:'9 años',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 10a — 119 a 131 meses
+  { etapa:'10a', mesesMin:119.0, mesesMax:131.0, label:'10 años',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+  // 11a — 131 meses en adelante
+  { etapa:'11a', mesesMin:131.0, mesesMax:999,  label:'11 años',
+    controles:['CRED'],                         bcg:false, hvb:false, tamizaje:false },
+];
+
+function getMesesExactos(fNac){
+  if(!fNac) return null;
+  const b = new Date(fNac);
+  if(isNaN(b)) return null;
+  const diff = TODAY - b;
+  return diff / (30.44 * 86400000); // meses decimales
+}
+
+function credProtocoloHTML(fNac, paciente){
+  const meses = getMesesExactos(fNac);
+  if(meses === null) return '';
+
+  // Load saved CRED dates from patient object
+  const credFechas = (paciente && paciente['CRED_FECHAS']) ? paciente['CRED_FECHAS'] : {};
+
+  // Find current stage
+  const currentIdx = CRED_ETAPAS.findIndex(e => meses >= e.mesesMin && meses < e.mesesMax);
+  const current = currentIdx >= 0 ? CRED_ETAPAS[currentIdx] : null;
+
+  // Show all stages from 0 to max (always show full protocol)
+  const visible = CRED_ETAPAS;
+
+  // Current stage summary badge
+  let currentBadge = '';
+  if(current){
+    currentBadge = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <span style="font-size:.72rem;color:#64748b">Etapa actual:</span>
+      <span class="cred-badge-etapa">${current.label}</span>
+      ${current.controles.map(c=>
+        c.includes('VAC')
+          ? `<span class="cred-tag vac">💉 ${c}</span>`
+          : `<span class="cred-tag ctrl">📋 ${c}</span>`
+      ).join('')}
+      ${current.bcg ? '<span class="cred-tag vac">BCG</span>' : ''}
+      ${current.hvb ? '<span class="cred-tag vac">HvB</span>' : ''}
+      ${current.tamizaje ? '<span class="cred-tag tam">🔬 Tamizaje</span>' : ''}
+    </div>`;
+  }
+
+  // Build table rows
+  const rows = visible.map(e => {
+    const eIdx      = CRED_ETAPAS.indexOf(e);
+    const isCurrent = current && e.etapa === current.etapa;
+    const isPast    = eIdx < currentIdx;
+    const rowClass  = isCurrent ? 'cred-current' : '';
+    const marker    = isCurrent ? '▶' : (isPast ? '✓' : '');
+    const markerColor = isCurrent ? '#0e6b7a' : (isPast ? '#16a34a' : '#94a3b8');
+
+    // Control CRED column
+    const ctrlHtml = e.controles.map(c =>
+      c.includes('VAC')
+        ? `<span class="cred-tag vac">💉 ${c}</span>`
+        : `<span class="cred-tag ctrl">📋 ${c}</span>`
+    ).join(' ');
+
+    // Vacunas RN column
+    const rnHtml = (e.bcg || e.hvb)
+      ? `${e.bcg ? '<span class="cred-tag vac">BCG</span>' : ''}${e.hvb ? '<span class="cred-tag vac">HvB</span>' : ''}`
+      : '<span class="cred-tag none">—</span>';
+
+    const tamHtml = e.tamizaje
+      ? '<span class="cred-tag tam">SI</span>'
+      : '<span class="cred-tag none">—</span>';
+
+    // Date input for this stage
+    const savedDate = credFechas[e.etapa] || '';
+    const filledClass = savedDate ? ' filled' : '';
+    const dni = paciente ? String(paciente['DNI']) : '';
+    const dateHtml = `<input type="date" class="cred-date-input${filledClass}"
+      id="cred-date-${e.etapa.replace(/\s/g,'_')}"
+      value="${savedDate}"
+      data-etapa="${e.etapa}"
+      data-dni="${dni}"
+      onchange="saveCREDFecha(this)"
+      title="Fecha en que se realizó el control ${e.etapa}">`;
+
+    return `<tr class="${rowClass}">
+      <td style="font-weight:800;color:${markerColor};font-size:.75rem;white-space:nowrap;text-align:center;line-height:1.3">
+        <div style="font-size:.72rem">${marker}</div>
+        <div style="color:${markerColor}">${e.etapa}</div>
+      </td>
+      <td style="text-align:left">${ctrlHtml}</td>
+      <td>${rnHtml}</td>
+      <td>${tamHtml}</td>
+      <td>${dateHtml}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <div class="cred-panel">
+    <div class="cred-panel-head">
+      <span>📋 Protocolo CRED — Controles y Vacunas por Etapa</span>
+    </div>
+    <div style="padding:12px 14px 8px">${currentBadge}</div>
+    <div style="overflow-x:auto">
+      <table class="cred-table">
+        <thead>
+          <tr>
+            <th>Etapa</th>
+            <th>Control CRED</th>
+            <th>Vacunas RN</th>
+            <th>Tamizaje</th>
+            <th style="width:130px">📅 Fecha control</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="padding:8px 14px 12px;font-size:.72rem;color:#64748b;font-style:italic">
+      💡 Las fechas se guardan automáticamente al seleccionarlas.
+    </div>
+  </div>`;
+}
+
+// ── Save CRED date for a specific etapa ──
+function saveCREDFecha(input){
+  const etapa = input.dataset.etapa;
+  const dni   = input.dataset.dni;
+  const fecha = input.value;
+
+  // Update filled style
+  if(fecha){ input.classList.add('filled'); }
+  else      { input.classList.remove('filled'); }
+
+  // Find patient in DATA
+  const p = DATA.find(d => String(d['DNI']) === String(dni));
+  if(!p) return;
+  if(!p['CRED_FECHAS']) p['CRED_FECHAS'] = {};
+  if(fecha){ p['CRED_FECHAS'][etapa] = fecha; }
+  else     { delete p['CRED_FECHAS'][etapa]; }
+
+  // Also update in filtered array
+  const pf = filtered.find(d => String(d['DNI']) === String(dni));
+  if(pf){
+    if(!pf['CRED_FECHAS']) pf['CRED_FECHAS'] = {};
+    if(fecha) pf['CRED_FECHAS'][etapa] = fecha;
+    else delete pf['CRED_FECHAS'][etapa];
+  }
+
+  showToast('📅 Fecha CRED guardada: ' + etapa + (fecha ? ' → ' + fmtDate(fecha) : ' eliminada'));
+
+  // ── Sync a Google Sheets ──
+  // Cada etapa CRED se guarda en su propia columna (col 13 en adelante)
+  // El campo clave para el Apps Script es 'CRED_' + etapa (espacios → guión bajo)
+  const colKey = 'CRED_' + etapa.replace(/\s/g, '_');
+  const payload = {
+    'DNI':               p['DNI'],
+    'NOMBRE Y APELLIDO': p['NOMBRE Y APELLIDO'],
+    [colKey]:            fecha || ''
+  };
+  sheetsRequest('edit', payload,
+    ()=>{ /* ok silencioso */ },
+    ()=>{ /* fallo silencioso */ }
+  );
+}
+
+function renderDetail(idx, editMode){
+  const p = filtered[idx];
+  if(!p) return;
+  const cc = p['PROXIMA CITA'];
+  const seg = p['SEGUIMIENTO DE CITA'];
+  let citaLabel='', citaColor='#64748b';
+  if(!cc){citaLabel='Sin cita';}
+  else if(seg<0){citaLabel='Vencida hace '+Math.abs(seg)+' días';citaColor='#dc2626';}
+  else if(seg===0){citaLabel='¡Hoy!';citaColor='#d97706';}
+  else if(seg<=30){citaLabel='En '+seg+' días';citaColor='#16a34a';}
+  else{citaLabel='En '+seg+' días';citaColor='#0284c7';}
+
+  const dirColors={'TRAPOSA':'#16a34a','MAYASCON':'#7c3aed','DESAGUADERO':'#d97706'};
+  const dColor = dirColors[p['DIRECCION']] || '#64748b';
+  const dirs = ['TRAPOSA','MAYASCON','DESAGUADERO'];
+
+  document.getElementById('detailTitle').textContent = p['NOMBRE Y APELLIDO'];
+
+  if(!editMode){
+    // ── VIEW MODE ──
+    document.getElementById('detailBody').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        ${detailField('DNI', p['DNI'], '🪪')}
+        ${detailField('F. Nacimiento', fmtDate(p['FECHA DE NACIMIENTO']), '🎂')}
+        ${detailField('Edad', p['EDAD (MES)'], '📅')}
+        ${detailField('Dirección','<span style="background:'+dColor+'18;color:'+dColor+';padding:2px 10px;border-radius:20px;font-weight:700;font-size:.78rem">'+p['DIRECCION']+'</span>','📍',true)}
+        ${detailField('Teléfono', p['TELEFONO']||'—', '📞')}
+        ${detailField('Próxima Cita', cc ? fmtDate(cc) : 'Sin cita', '📆')}
+        ${detailField('Tipo de Seguro', p['TIPO DE SEGURO'] ? segBadge(p['TIPO DE SEGURO']||'') : segBadge(''), '🏥', true)}
+        ${detailField('Prog. Juntos', p['PROGRAMA JUNTOS'] ? (p['PROGRAMA JUNTOS']==='SI' ? '<span style="background:#dcfce7;color:#166534;padding:2px 12px;border-radius:20px;font-weight:700">SI</span>' : '<span style="background:#fee2e2;color:#991b1b;padding:2px 12px;border-radius:20px;font-weight:700">NO</span>') : '—', '👥', true)}
+        </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Estado de Seguimiento</div>
+        <div style="font-size:.95rem;font-weight:700;color:${citaColor}">${citaLabel}</div>
+      </div>
+      <div style="background:${p['OBSERVACIONES']?'#fffbeb':'#f8fafc'};border:1px solid ${p['OBSERVACIONES']?'#fde68a':'#e2e8f0'};border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:.7rem;font-weight:700;color:${p['OBSERVACIONES']?'#b45309':'#94a3b8'};text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">📝 Observaciones</div>
+        <div style="font-size:.88rem;color:${p['OBSERVACIONES']?'#92400e':'#94a3b8'};font-style:${p['OBSERVACIONES']?'normal':'italic'}">${p['OBSERVACIONES']||'Sin observaciones'}</div>
+      </div>
+      ${credProtocoloHTML(p['FECHA DE NACIMIENTO'], p)}
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:18px">
+        <button onclick="renderDetail(${idx},true)" style="background:#0f4c81;color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:.88rem;font-weight:700;cursor:pointer">✏️ Editar</button>
+        <button onclick="confirmDelete(${idx})" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:10px;padding:10px 20px;font-size:.88rem;font-weight:700;cursor:pointer">🗑 Eliminar</button>
+        <button onclick="closeDetail()" style="background:#e2e8f0;color:#475569;border:none;border-radius:10px;padding:10px 28px;font-size:.88rem;font-weight:700;cursor:pointer">✕ Cerrar</button>
+      </div>`;
+  } else {
+    // ── EDIT MODE ──
+    const dirOpts = dirs.map(d=>`<option value="${d}" ${p['DIRECCION']===d?'selected':''}>${d}</option>`).join('');
+    document.getElementById('detailBody').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        ${editField('DNI','e-dni',p['DNI'],'text')}
+        ${editField('F. Nacimiento','e-nac',p['FECHA DE NACIMIENTO'],'date')}
+        ${editField('Teléfono','e-tel',p['TELEFONO'],'text','text-transform:uppercase')}
+        <div style="background:#f8fafc;border-radius:10px;padding:12px 14px">
+          <div style="font-size:.67rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">🏥 Tipo de Seguro</div>
+          <select id="e-seg" style="width:100%;padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;background:#fff">
+            <option value="" \${!p['TIPO DE SEGURO']?'selected':''}>Sin seguro</option>
+            <option value="SIS" \${p['TIPO DE SEGURO']==='SIS'?'selected':''}>SIS</option>
+            <option value="ESSALUD" \${p['TIPO DE SEGURO']==='ESSALUD'?'selected':''}>EsSalud</option>
+            <option value="PRIVADO" \${p['TIPO DE SEGURO']==='PRIVADO'?'selected':''}>Privado</option>
+          </select>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:12px 14px">
+          <div style="font-size:.67rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">👥 Programa Juntos</div>
+          <select id="e-pjuntos" style="width:100%;padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;background:#fff">
+            <option value="">-- Seleccionar --</option>
+            <option value="SI" \${p['PROGRAMA JUNTOS']==='SI'?'selected':''}>SI</option>
+            <option value="NO" \${p['PROGRAMA JUNTOS']==='NO'?'selected':''}>NO</option>
+          </select>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:12px 14px">
+          <div style="font-size:.67rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">📍 Dirección</div>
+          <select id="e-dir" style="width:100%;border:1.5px solid #e2e8f0;border-radius:7px;padding:6px 8px;font-size:.88rem;font-weight:600;color:#0f172a;background:#fff">
+            ${dirOpts}
+          </select>
+        </div>
+        ${editField('Próxima Cita','e-cita',p['PROXIMA CITA']||'','date')}
+        <div style="background:#f8fafc;border-radius:10px;padding:12px 14px">
+          <div style="font-size:.67rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">📝 Observaciones</div>
+          <textarea id="e-obs" rows="2" style="width:100%;border:1.5px solid #e2e8f0;border-radius:7px;padding:6px 8px;font-size:.85rem;color:#0f172a;resize:none;box-sizing:border-box;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">${(p['OBSERVACIONES']||'').toUpperCase()}</textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:6px">
+        <button onclick="saveDetail(${idx})" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:.88rem;font-weight:700;cursor:pointer">💾 Guardar</button>
+        <button onclick="renderDetail(${idx},false)" style="background:#e2e8f0;color:#475569;border:none;border-radius:10px;padding:10px 28px;font-size:.88rem;font-weight:700;cursor:pointer">✕ Cancelar</button>
+      </div>`;
+  }
+}
+
+function editField(label, id, val, type){
+  return `<div style="background:#f8fafc;border-radius:10px;padding:12px 14px">
+    <div style="font-size:.67rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">${label}</div>
+    <input id="${id}" type="${type}" value="${val||''}" style="width:100%;border:1.5px solid #e2e8f0;border-radius:7px;padding:6px 8px;font-size:.88rem;font-weight:600;color:#0f172a;box-sizing:border-box;background:#fff">
+  </div>`;
+}
+
+function saveDetail(idx){
+  const p = filtered[idx];
+  // Find this patient in DATA too
+  const dataIdx = DATA.findIndex(d => d['DNI']==p['DNI'] && d['NOMBRE Y APELLIDO']==p['NOMBRE Y APELLIDO']);
+
+  const nac   = document.getElementById('e-nac').value || p['FECHA DE NACIMIENTO'];
+  const cita  = document.getElementById('e-cita').value || null;
+  const seg   = cita ? Math.round((new Date(cita)-TODAY)/86400000) : null;
+
+  const updates = {
+    'DNI':         document.getElementById('e-dni').value || p['DNI'],
+    'FECHA DE NACIMIENTO': nac,
+    'EDAD (MES)':  calcEdad(nac),
+    'TELEFONO':    document.getElementById('e-tel').value,
+    'DIRECCION':   document.getElementById('e-dir').value,
+    'PROXIMA CITA':cita,
+    'SEGUIMIENTO DE CITA': seg,
+    'TIPO DE SEGURO': document.getElementById('e-seg') ? document.getElementById('e-seg').value : (p['TIPO DE SEGURO']||''),
+    'PROGRAMA JUNTOS': document.getElementById('e-pjuntos') ? document.getElementById('e-pjuntos').value : '',
+    'OBSERVACIONES': document.getElementById('e-obs').value.trim().toUpperCase(),
+    'CRED_FECHAS': p['CRED_FECHAS'] || {},
+  };
+
+  Object.assign(p, updates);
+  if(dataIdx>=0) Object.assign(DATA[dataIdx], updates);
+
+  renderDetail(idx, false);
+  applyFilters();
+  showToast('⏳ Guardando cambios en Google Sheets...');
+
+  // Enviar solo los campos necesarios para evitar URL muy larga
+  const payload = {
+    'DNI':                 p['DNI'],
+    'NOMBRE Y APELLIDO':   p['NOMBRE Y APELLIDO'],
+    'FECHA DE NACIMIENTO': p['FECHA DE NACIMIENTO'],
+    'EDAD (MES)':          p['EDAD (MES)'],
+    'TELEFONO':            String(p['TELEFONO']||''),
+    'DIRECCION':           p['DIRECCION'],
+    'PROXIMA CITA':        p['PROXIMA CITA']||'',
+    'SEGUIMIENTO DE CITA': p['SEGUIMIENTO DE CITA']||'',
+    'TIPO DE SEGURO':      p['TIPO DE SEGURO']||'',
+    'PROGRAMA JUNTOS':     p['PROGRAMA JUNTOS']||'',
+    'OBSERVACIONES':       p['OBSERVACIONES']||''
+  };
+  sheetsRequest('edit', payload,
+    ()=>showToast('✅ Cambios guardados en Google Sheets'),
+    (err)=>showToast('⚠ Local OK · No se pudo guardar en Sheets: '+err)
+  );
+}
+
+function detailField(label,val,icon,raw){
+  return `<div style="background:#f8fafc;border-radius:10px;padding:12px 14px">
+    <div style="font-size:.67rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">${icon} ${label}</div>
+    <div style="font-size:.88rem;font-weight:600;color:#0f172a">${raw?val:(val||'—')}</div>
+  </div>`;
+}
+function syncYearBtns(){
+  // Get all years present in DATA
+  const activeYears = new Set(DATA.map(p => (p['FECHA DE NACIMIENTO']||'').slice(0,4)).filter(y=>y.length===4));
+  // Remove buttons for years with no patients (keep 'TODOS' always)
+  years = years.filter(y => y==='TODOS' || activeYears.has(y));
+  // Add any missing years that exist in data
+  activeYears.forEach(y => { if(!years.includes(y)) years.push(y); });
+  // Sort: TODOS first, then descending
+  years.sort((a,b)=>{ if(a==='TODOS')return -1; if(b==='TODOS')return 1; return parseInt(b)-parseInt(a); });
+  // If selYear was removed, reset to TODOS
+  if(!years.includes(selYear)) selYear='TODOS';
+  // Rebuild buttons
+  yg.innerHTML='';
+  years.forEach(y=>{
+    const b = createYearBtn(y);
+    if(y===selYear) b.classList.add('active');
+    else b.classList.remove('active');
+    yg.appendChild(b);
+  });
+}
+
+function confirmDelete(idx){
+  const p = filtered[idx];
+  if(!p) return;
+  document.getElementById('detailBody').innerHTML = `
+    <div style="text-align:center;padding:24px 16px">
+      <div style="font-size:2.5rem;margin-bottom:12px">🗑</div>
+      <div style="font-size:1rem;font-weight:700;color:#0f172a;margin-bottom:8px">¿Eliminar este paciente?</div>
+      <div style="font-size:.88rem;color:#64748b;margin-bottom:6px">${p['NOMBRE Y APELLIDO']}</div>
+      <div style="font-size:.8rem;color:#94a3b8;margin-bottom:24px">DNI: ${p['DNI']}</div>
+      <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:.78rem;color:#b91c1c;margin-bottom:22px">
+        ⚠ Esta acción no se puede deshacer
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="deletePatient(${idx})" style="background:#dc2626;color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:.88rem;font-weight:700;cursor:pointer">🗑 Sí, eliminar</button>
+        <button onclick="renderDetail(${idx},false)" style="background:#e2e8f0;color:#475569;border:none;border-radius:10px;padding:10px 28px;font-size:.88rem;font-weight:700;cursor:pointer">Cancelar</button>
+      </div>
+    </div>`;
+}
+
+function deletePatient(idx){
+  const p = filtered[idx];
+  if(!p) return;
+  // Remove from DATA
+  const dataIdx = DATA.findIndex(d => d['DNI']==p['DNI'] && d['NOMBRE Y APELLIDO']==p['NOMBRE Y APELLIDO']);
+  if(dataIdx >= 0) DATA.splice(dataIdx, 1);
+  closeDetail();
+  // Sync year buttons — remove buttons for years with no patients left
+  syncYearBtns();
+  page=1; applyFilters();
+  showToast('🗑 Paciente eliminado');
+  // Sync with Sheets if configured
+  sheetsRequest('delete', {'DNI': p['DNI'], 'NOMBRE Y APELLIDO': p['NOMBRE Y APELLIDO']},
+    ()=>showToast('✅ Eliminado en Google Sheets'),
+    ()=>{}
+  );
+}
+
+function closeDetail(){
+  document.getElementById('detailOverlay').style.display='none';
+  document.getElementById('detailModal').style.display='none';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail();});
+
+// INIT: carga inmediata, luego intenta sync con Sheets en background
+filtered=[...DATA];
+syncYearBtns();
+applyFilters();
+setTimeout(syncFromSheets, 800);
+setInterval(syncFromSheets, 5*60*1000);
+
+// Populate sidebar legend with real insurance images
+(function(){
+  const legend = document.getElementById('seg-legend');
+  if(!legend) return;
+  const entries = [
+    {key:'SIS', label:'Seguro Integral de Salud'},
+    {key:'ESSALUD', label:'EsSalud'},
+    {key:'PRIVADO', label:'Seguro Privado'}
+  ];
+  entries.forEach(e => {
+    const img = SEG_IMGS[e.key];
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px';
+    if(img){
+      row.innerHTML = `<img src="${img}" style="height:20px;width:auto;object-fit:contain;flex-shrink:0"><span style="font-size:.72rem;color:rgba(255,255,255,.7)">${e.label}</span>`;
+    }
+    legend.appendChild(row);
+  });
+})();
+
+</script>
+
+<!-- MODAL DETALLE PACIENTE -->
+<div id="detailOverlay" onclick="closeDetail()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;backdrop-filter:blur(2px)"></div>
+<div id="detailModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;width:min(560px,95vw);max-height:90vh;overflow-y:auto;z-index:901;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div id="detailHeader" style="padding:22px 24px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div style="font-size:.72rem;font-weight:700;color:#64748b;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">Ficha del Paciente — CRED</div>
+      <div id="detailTitle" style="font-size:1.15rem;font-weight:800;color:#0f172a"></div>
+    </div>
+    <button onclick="closeDetail()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1.1rem;color:#64748b;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+  </div>
+  <div id="detailBody" style="padding:20px 24px 24px"></div>
+</div>
+</body>
+</html>
