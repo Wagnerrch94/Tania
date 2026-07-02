@@ -502,14 +502,29 @@ function toISO(str){
   return null;
 }
 function calcEdad(fNac){
-  if(!fNac)return'';
-  const b=new Date(fNac);if(isNaN(b))return'';
-  const diff=TODAY-b;
-  const totalDias=Math.floor(diff/86400000);
-  const años=Math.floor(totalDias/365.25);
-  const meses=Math.floor((totalDias%365.25)/30.44);
-  const dias=Math.floor(totalDias%30.44);
-  return años+' Años '+meses+' Meses '+dias+' Dias';
+  if(!fNac) return '';
+  const b = new Date(fNac);
+  if(isNaN(b)) return '';
+
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+  let years  = todayUTC.getUTCFullYear() - b.getUTCFullYear();
+  let months = todayUTC.getUTCMonth() - b.getUTCMonth();
+  let days   = todayUTC.getUTCDate() - b.getUTCDate();
+
+  if(days < 0){
+    months--;
+    const prevMonthLastDay = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth(), 0)).getUTCDate();
+    days += prevMonthLastDay;
+  }
+  if(months < 0){
+    years--;
+    months += 12;
+  }
+  if(years < 0){ years = 0; months = 0; days = 0; }
+
+  return years+' Años '+months+' Meses '+days+' Dias';
 }
 function citaClass(p){const d=dd(p['PROXIMA CITA']);if(d===null)return'sin';if(d<0)return'vencida';if(d===0)return'hoy';if(d<=30)return'proxima';return'futura';}
 
