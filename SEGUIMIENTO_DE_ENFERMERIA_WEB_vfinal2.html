@@ -20,6 +20,34 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:#1e293
 .btn-sync:hover{background:rgba(255,255,255,.22)}
 .btn-nuevo{background:#e67e22;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s}
 .btn-nuevo:hover{background:#d35400}
+.btn-hoy{background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s;position:relative}
+.btn-hoy:hover{background:#d97706}
+.btn-hoy .hoy-badge{position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 3px;box-shadow:0 0 0 2px #0e6b7a}
+
+/* ── MODAL CITAS DE HOY (ámbar/naranja) ── */
+.hoy-overlay{display:none;position:fixed;inset:0;background:rgba(69,42,10,.55);z-index:850;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.hoy-overlay.open{display:flex}
+.hoy-modal{background:#fff;border-radius:16px;width:600px;max-width:95vw;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:su .25s ease}
+.hoy-head{background:linear-gradient(90deg,#d97706,#f59e0b);padding:18px 22px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hoy-head .hoy-icon{font-size:1.4rem}
+.hoy-head-text{flex:1}
+.hoy-head-text h3{color:#fff;font-size:1.05rem;font-weight:800}
+.hoy-head-text p{color:#fef3c7;font-size:.75rem;margin-top:2px}
+.hoy-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hoy-close:hover{background:rgba(255,255,255,.32)}
+.hoy-body{padding:18px 20px;overflow-y:auto;flex:1;background:#fffbeb}
+.hoy-empty{text-align:center;padding:40px 20px;color:#b45309}
+.hoy-empty .ic{font-size:2.6rem;margin-bottom:10px}
+.hoy-empty .msg{font-weight:700;font-size:.95rem}
+.hoy-card{background:#fff;border:1.5px solid #fde68a;border-radius:12px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
+.hoy-card:hover{border-color:#f59e0b;box-shadow:0 2px 10px rgba(245,158,11,.18);transform:translateY(-1px)}
+.hoy-card:last-child{margin-bottom:0}
+.hoy-card-icon{width:40px;height:40px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.hoy-card-info{flex:1;min-width:0}
+.hoy-card-name{font-weight:800;color:#0f172a;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hoy-card-meta{font-size:.75rem;color:#92400e;margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hoy-card-arrow{color:#f59e0b;font-size:1.1rem;flex-shrink:0}
+.hoy-count-pill{background:rgba(255,255,255,.25);color:#fff;border-radius:20px;padding:2px 10px;font-size:.75rem;font-weight:800}
 
 /* ── LAYOUT ── */
 .layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 52px)}
@@ -217,6 +245,7 @@ tbody td{padding:3px 4px;font-size:.68rem;color:#334155;vertical-align:middle;ov
     <span class="topbar-time" id="clock">⏱ --:-- a.m.</span>
     <span class="topbar-total" id="top-total">Total: 179</span>
     <button class="btn-sync" onclick="syncFromSheets()" title="Sincronizar con Google Sheets">🔄 Sincronizar</button>
+    <button class="btn-hoy" onclick="openCitasHoy()" title="Ver citas programadas para hoy">📅 Citas de Hoy</button>
     <button class="btn-nuevo" onclick="openModal()">➕ Nuevo Paciente</button>
   </div>
 </div>
@@ -371,6 +400,22 @@ tbody td{padding:3px 4px;font-size:.68rem;color:#334155;vertical-align:middle;ov
 </div>
 
 <div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- MODAL CITAS DE HOY -->
+<div class="hoy-overlay" id="hoyOverlay" onclick="if(event.target===this)closeCitasHoy()">
+  <div class="hoy-modal">
+    <div class="hoy-head">
+      <span class="hoy-icon">📅</span>
+      <div class="hoy-head-text">
+        <h3>Citas de Hoy</h3>
+        <p id="hoyFecha">—</p>
+      </div>
+      <span class="hoy-count-pill" id="hoyCountPill">0</span>
+      <button class="hoy-close" onclick="closeCitasHoy()">✕</button>
+    </div>
+    <div class="hoy-body" id="hoyBody"></div>
+  </div>
+</div>
 
 <script>
 
@@ -609,6 +654,7 @@ function applyFilters(){
   });
   updateStats();
   renderPage();
+  updateHoyBadge();
 }
 
 function updateStats(){
@@ -693,6 +739,66 @@ function resetFilters(){
 // Clock
 function updateClock(){const n=new Date();let h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();const ap=h>=12?'p.m.':'a.m.';h=h%12||12;document.getElementById('clock').textContent=`⏱ ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ap}`;}
 updateClock();setInterval(updateClock,1000);
+
+// ── CITAS DE HOY ──
+function getCitasHoy(){
+  return DATA.filter(p => citaClass(p) === 'hoy');
+}
+
+function updateHoyBadge(){
+  const btn = document.querySelector('.btn-hoy');
+  if(!btn) return;
+  const n = getCitasHoy().length;
+  let badge = btn.querySelector('.hoy-badge');
+  if(n > 0){
+    if(!badge){
+      badge = document.createElement('span');
+      badge.className = 'hoy-badge';
+      btn.appendChild(badge);
+    }
+    badge.textContent = n;
+  } else if(badge){
+    badge.remove();
+  }
+}
+
+function openCitasHoy(){
+  const hoyList = getCitasHoy();
+  const fechaStr = TODAY.toLocaleDateString('es-PE', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('hoyFecha').textContent = fechaStr.charAt(0).toUpperCase()+fechaStr.slice(1);
+  document.getElementById('hoyCountPill').textContent = hoyList.length;
+
+  const body = document.getElementById('hoyBody');
+  if(hoyList.length === 0){
+    body.innerHTML = `<div class="hoy-empty">
+      <div class="ic">🌤️</div>
+      <div class="msg">No hay citas programadas para hoy</div>
+    </div>`;
+  } else {
+    const dirColors={'TRAPOSA':'#16a34a','MAYASCON':'#7c3aed','DESAGUADERO':'#d97706'};
+    body.innerHTML = hoyList.map(p => {
+      const dColor = dirColors[p['DIRECCION']] || '#64748b';
+      return `<div class="hoy-card" onclick="closeCitasHoy();openDetail('${p['DNI']}')">
+        <div class="hoy-card-icon">👶</div>
+        <div class="hoy-card-info">
+          <div class="hoy-card-name">${p['NOMBRE Y APELLIDO'].trim()}</div>
+          <div class="hoy-card-meta">
+            <span>🪪 ${p['DNI']}</span>
+            <span style="color:${dColor};font-weight:700">📍 ${p['DIRECCION']}</span>
+            <span>📞 ${p['TELEFONO']||'—'}</span>
+          </div>
+        </div>
+        <span class="hoy-card-arrow">›</span>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('hoyOverlay').classList.add('open');
+}
+
+function closeCitasHoy(){
+  document.getElementById('hoyOverlay').classList.remove('open');
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeCitasHoy(); });
 
 // Modal
 function openModal(){document.getElementById('modalOverlay').classList.add('open');}
